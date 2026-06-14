@@ -68,47 +68,6 @@ It helps users generate professional invoices with GST calculations, download PD
 
 ---
 
-# 📸 Project Screenshots
-
-## Dashboard
-
-> Add screenshot here
-
-```
-screenshots/dashboard.png
-```
-
----
-
-## Create Invoice
-
-> Add screenshot here
-
-```
-screenshots/create-invoice.png
-```
-
----
-
-## Invoice Preview
-
-> Add screenshot here
-
-```
-screenshots/invoice-preview.png
-```
-
----
-
-## Invoice History
-
-> Add screenshot here
-
-```
-screenshots/history.png
-```
-
----
 
 # 🚀 Installation
 
@@ -172,9 +131,7 @@ src
 
 ## Kapil Porwal
 
-Founder — **Kapil Tech Solution**
-
-📧 kapil716@gmail.com
+📧 kapilporwal716@gmail.com
 
 🌐 Portfolio — Coming Soon
 
@@ -190,8 +147,5 @@ It motivates me to build more awesome projects.
 
 ---
 
-# 📄 License
-
-© 2026 Kapil Tech Solution
 
 All Rights Reserved.
