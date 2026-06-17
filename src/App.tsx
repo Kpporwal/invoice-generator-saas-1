@@ -6,11 +6,17 @@ import Dashboard from './components/dashboard/Dashboard';
 import InvoiceForm from './components/invoice/InvoiceForm';
 import InvoiceHistory from './components/invoice/InvoiceHistory';
 import InvoicePreview from './components/invoice/InvoicePreview';
+import Reports from './components/reports/Reports';
 import AuthScreens from './components/auth/AuthScreens';
 import type { Invoice } from './types';
 import { Loader2 } from 'lucide-react';
 
-type Page = 'dashboard' | 'create' | 'history' | 'preview';
+type Page =
+  | 'dashboard'
+  | 'create'
+  | 'history'
+  | 'preview'
+  | 'reports';
 
 function AppContent() {
   const { user, loading, signOut } = useAuth();
@@ -104,6 +110,11 @@ function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
             onDuplicate={handleDuplicate}
           />
         );
+        case 'reports':
+  case 'reports':
+  return (
+    <Reports />
+  );
       default:
         return <Dashboard onNavigate={handleNavigate} />;
     }

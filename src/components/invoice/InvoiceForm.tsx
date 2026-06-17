@@ -20,7 +20,12 @@ const emptyCompany: Company = {
   gstNumber: '08ABCDE1234F1Z5',
   logo: '/logo.png'
 };
-const emptyCustomer: Customer = { name: '', address: '', gstNumber: '' };
+const emptyCustomer: Customer = {
+  name: '',
+  address: '',
+  gstNumber: '',
+  whatsappNumber: '',
+};
 const emptyItem: InvoiceItem = { id: '', name: '', description: '', quantity: 1, rate: 0, gstPercent: 18 };
 
 function generateId() {
@@ -188,6 +193,27 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
               <div>
                 <label className={labelClass}>Customer GST Number (Optional)</label>
                 <input type="text" value={customer.gstNumber} onChange={e => setCustomer(prev => ({ ...prev, gstNumber: e.target.value }))} className={inputClass} placeholder="22BBBBB0000B1Z5" />
+                <div>
+                  <br></br>
+  <label className={labelClass}>Customer WhatsApp Number (Optional)</label>
+
+  <input
+    type="tel"
+    value={customer.whatsappNumber}
+    onChange={(e) =>
+      setCustomer((prev) => ({
+        ...prev,
+        whatsappNumber: e.target.value,
+      }))
+    }
+    className={inputClass}
+    placeholder="9876543210"
+  />
+
+  <p className="text-xs text-slate-500 mt-1">
+    Enter 10-digit WhatsApp number
+  </p>
+</div>
               </div>
             </div>
           </div>

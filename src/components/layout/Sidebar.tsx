@@ -4,6 +4,7 @@ import {
   FileText,
   PlusCircle,
   Clock,
+  BarChart3,
   Menu,
   X,
   ChevronRight,
@@ -11,7 +12,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 
-type Page = 'dashboard' | 'create' | 'history' | 'preview';
+type Page =
+  | 'dashboard'
+  | 'create'
+  | 'history'
+  | 'preview'
+  | 'reports';
 
 interface SidebarProps {
   currentPage: Page;
@@ -23,6 +29,11 @@ const navItems: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'create', label: 'Create Invoice', icon: PlusCircle },
   { id: 'history', label: 'Invoice History', icon: Clock },
+  {
+  id: 'reports',
+  label: 'Reports',
+  icon: BarChart3,
+},
 ];
 
 export default function Sidebar({ currentPage, onNavigate, onSignOut }: SidebarProps) {

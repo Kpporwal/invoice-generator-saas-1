@@ -9,6 +9,7 @@ export interface Customer {
   name: string;
   address: string;
   gstNumber: string;
+  whatsappNumber: string;
 }
 
 export interface InvoiceItem {

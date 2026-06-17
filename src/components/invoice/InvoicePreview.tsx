@@ -1,11 +1,22 @@
 import { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { ArrowLeft, Download, Printer, Copy, Edit3, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import {
+ArrowLeft,
+Download,
+Printer,
+Copy,
+Edit3,
+Trash2,
+Loader2,
+AlertCircle,
+Share2
+} from "lucide-react";
 import { useInvoiceStore } from '../../store/InvoiceContext';
 import { formatCurrency, formatDate, calculateItemGST, calculateItemBase } from '../../utils/calculations';
 import { generateInvoicePDF } from '../../utils/pdfGenerator';
 import type { Invoice } from '../../types';
 import Layout from '../layout/Layout';
+
 
 type Page = 'dashboard' | 'create' | 'history' | 'preview';
 
@@ -36,20 +47,99 @@ export default function InvoicePreview({ invoice, onNavigate, onEdit, onDuplicat
   }
 
   const handleDownloadPDF = async () => {
-    const el = invoiceRef.current;
-    if (!el) return;
-    setGenerating(true);
-    setError(null);
-    try {
-      await generateInvoicePDF(el, invoice.invoiceNumber);
-    } catch (err) {
-      setError('Failed to generate PDF. Please try again.');
-      console.error('PDF generation failed:', err);
-    } finally {
-      setGenerating(false);
-    }
-  };
+  const el = invoiceRef.current;
+  if (!el) return;
 
+  setGenerating(true);
+  setError(null);
+  const handleWhatsAppShare = () => {
+  if (!invoice) return;
+
+  let number = invoice.customer.whatsappNumber || "";
+  number = number.replace(/\D/g, "");
+
+  if (number.length === 10) {
+    number = "91" + number;
+  }
+
+  const message = `Dear ${invoice.customer.name},
+
+Greetings from Kapil Tech Solution.
+
+Please find your Invoice.
+
+Invoice Number : ${invoice.invoiceNumber}
+
+Invoice Amount : ₹${invoice.calculations.grandTotal.toLocaleString("en-IN")}
+
+Kindly download the attached invoice.
+
+Thank you.
+
+Kapil Tech Solution`;
+
+  window.open(
+    `https://wa.me/${number}?text=${encodeURIComponent(message)}`,
+    "_blank"
+  );
+};
+
+  // Scale wrapper save karo
+  const wrapper = el.parentElement;
+  const oldTransform = wrapper?.style.transform;
+  const oldWidth = wrapper?.style.width;
+
+  try {
+    // PDF banate time original size
+    if (wrapper) {
+      wrapper.style.transform = "scale(1)";
+      wrapper.style.width = "210mm";
+    }
+
+    await generateInvoicePDF(el, invoice.invoiceNumber);
+
+  } catch (err) {
+    setError("Failed to generate PDF. Please try again.");
+    console.error(err);
+
+  } finally {
+    // Wapas mobile preview restore
+    if (wrapper) {
+      wrapper.style.transform = oldTransform || "";
+      wrapper.style.width = oldWidth || "";
+    }
+
+    setGenerating(false);
+  }
+};
+const handleWhatsAppShare = () => {
+  if (!invoice) return;
+
+  let number = invoice.customer.whatsappNumber || "";
+
+  number = number.replace(/\D/g, "");
+
+  if (number.length === 10) {
+    number = "91" + number;
+  }
+
+  const message = `Hello ${invoice.customer.name},
+
+Please find your Invoice.
+
+Invoice No : ${invoice.invoiceNumber}
+
+Amount : ₹${invoice.calculations.grandTotal.toLocaleString("en-IN")}
+
+Thank you for your business.
+
+Kapil Tech Solution`;
+
+  window.open(
+    `https://wa.me/${number}?text=${encodeURIComponent(message)}`,
+    "_blank"
+  );
+};
   const handlePrint = () => {
     const content = invoiceRef.current;
     if (!content) return;
@@ -141,6 +231,13 @@ export default function InvoicePreview({ invoice, onNavigate, onEdit, onDuplicat
           {generating ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
           Download PDF
         </button>
+        <button
+  onClick={handleWhatsAppShare}
+  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+>
+  <Share2 size={18} />
+  WhatsApp
+</button>
         <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 text-sm border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
           <Printer size={14} />
           Print
@@ -152,11 +249,26 @@ export default function InvoicePreview({ invoice, onNavigate, onEdit, onDuplicat
       </div>
 
       {/* ---- Invoice Document (A4-proportioned, captured for PDF) ---- */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden flex justify-center py-8">
-        <div
-          ref={invoiceRef}
-          style={{ width: '210mm', minHeight: '297mm', padding: '16mm 20mm', backgroundColor: '#fff', color: '#1e293b', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", fontSize: '12px', lineHeight: '1.5' }}
-        >
+    <div className="bg-white rounded-xl border border-slate-200 shadow-lg py-6 overflow-y-auto overflow-x-hidden"></div>
+  <div className="w-full flex justify-center py-4">
+    <div
+      className="origin-top scale-[0.42] sm:scale-[0.55] md:scale-[0.72] lg:scale-100"
+    >
+      <div
+        ref={invoiceRef}
+        style={{
+          width: "210mm",
+          minHeight: "297mm",
+          padding: "16mm 20mm",
+          background: "#fff",
+          color: "#1e293b",
+          fontFamily:
+            "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
+          fontSize: "12px",
+          lineHeight: "1.5",
+        }}
+      >
+        
           {/* === HEADER === */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 20, borderBottom: '3px solid #0f172a', marginBottom: 24 }}>
             {/* Company info */}
@@ -165,8 +277,8 @@ export default function InvoicePreview({ invoice, onNavigate, onEdit, onDuplicat
                   src="/logo.png"
                   alt="Logo"
                   style={{
-                    width: 90,
-                    height: 90,
+                    width: 70,
+                    height: 70,
                     objectFit: 'contain',
                     marginTop: 16,
                   }}
@@ -179,13 +291,6 @@ export default function InvoicePreview({ invoice, onNavigate, onEdit, onDuplicat
                     📞 +91 8000060853
                   </div>
 
-                  <div style={{ fontSize: 11, color: '#64748b' }}>
-                    ✉ support@kapiltechsolution.in
-                  </div>
-
-                  <div style={{ fontSize: 11, color: '#64748b' }}>
-                    🌐 www.kapiltechsolution.in
-                  </div>
                 {invoice.company.gstNumber && (
                   <div style={{ fontSize: 11, color: '#334155', fontWeight: 600, marginTop: 4 }}>GSTIN: {invoice.company.gstNumber}</div>
                 )}
@@ -208,9 +313,9 @@ export default function InvoicePreview({ invoice, onNavigate, onEdit, onDuplicat
             <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{invoice.customer.name}</div>
               <div style={{ fontSize: 11, color: '#64748b', whiteSpace: 'pre-line', marginTop: 2 }}>{invoice.customer.address}</div>
-              {invoice.customer.gstNumber && (
-  <div>GSTIN: {invoice.customer.gstNumber}</div>
-)}
+                  {invoice.customer.gstNumber && (
+                                       <div>GSTIN: {invoice.customer.gstNumber}</div>
+                                )}
             </div>
           </div>
 
@@ -373,18 +478,20 @@ export default function InvoicePreview({ invoice, onNavigate, onEdit, onDuplicat
     color: '#64748b',
   }}
 >
-  <div>Thank you for your business!</div>
-
-  <div style={{ marginTop: 6, fontWeight: 600 }}>
+  <div>Thank you for your business!</div> 
+<div style={{ marginTop:-4, fontWeight: 600, paddingTop:1.5, fontSize: 10, color: '#64748b' }}>
+ 
     Powered by Kapil Tech Solution
-  </div>
 
-  <div>
+
+  
     🌐 www.kapiltechsolution.in | ✉ support@kapiltechsolution.in
-  </div>
+    </div>
+  
 </div>
           </div>
         </div>
+      </div>
       </div>
     </Layout>
   );
