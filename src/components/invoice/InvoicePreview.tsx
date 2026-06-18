@@ -148,7 +148,7 @@ Kapil Tech Solution`;
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Invoice-${invoice.invoiceNumber}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:40px;color:#1e293b;font-size:12px}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:10px;color:#1e293b;font-size:12px}
   table{width:100%;border-collapse:collapse}
   th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;font-size:11px}
   th{font-weight:600;color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:0.05em}
@@ -160,8 +160,40 @@ Kapil Tech Solution`;
   .inv-words{font-style:italic;font-size:10px;color:#64748b;margin-top:4px}
   .inv-footer{margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0}
   .gst-badge{display:inline-block;padding:1px 6px;background:#f0fdf4;color:#166534;font-size:10px;border-radius:3px;font-weight:600}
-  @media print{body{padding:20px}}
-</style></head><body>${content.innerHTML}</body></html>`);
+  @page{
+  size:A4;
+  margin:10mm;
+}
+
+html,body{
+  width:210mm;
+  height:297mm;
+}
+
+@media print{
+
+  html,body{
+    width:210mm;
+    height:297mm;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  body{
+    padding:10mm;
+  }
+
+  table{
+    page-break-inside:avoid;
+  }
+
+  .inv-footer{
+    page-break-inside:avoid;
+  }
+}</style></head><body>${content.innerHTML}</body></html>`);
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);

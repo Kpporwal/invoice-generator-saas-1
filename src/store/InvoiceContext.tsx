@@ -4,6 +4,7 @@ import { calculateInvoice } from '../utils/calculations';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
+
 interface InvoiceStore {
   invoices: Invoice[];
   loading: boolean;
