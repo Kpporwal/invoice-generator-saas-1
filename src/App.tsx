@@ -1,3 +1,7 @@
+import About from './components/pages/About';
+import PrivacyPolicy from './components/pages/PrivacyPolicy';
+import TermsConditions from './components/pages/TermsConditions';
+import Contact from './components/pages/Contact';
 import { useState, useCallback } from 'react';
 import { AuthProvider, useAuth } from './store/AuthContext';
 import { InvoiceProvider } from './store/InvoiceContext';
@@ -16,7 +20,11 @@ type Page =
   | 'create'
   | 'history'
   | 'preview'
-  | 'reports';
+  | 'reports'
+  | 'about'
+  | 'privacy'
+  | 'terms'
+  | 'contact';
 
 function AppContent() {
   const { user, loading, signOut } = useAuth();
@@ -80,7 +88,8 @@ function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
   }, []);
 
   const renderPage = () => {
-    switch (currentPage) {
+    switch (currentPage)
+     {
       case 'dashboard':
         return <Dashboard onNavigate={handleNavigate} />;
       case 'create':
@@ -115,10 +124,22 @@ function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
   return (
     <Reports />
   );
+  case 'about':
+  return <About />;
+
+case 'privacy':
+  return <PrivacyPolicy />;
+
+case 'terms':
+  return <TermsConditions />;
+
+case 'contact':
+  return <Contact />;
       default:
         return <Dashboard onNavigate={handleNavigate} />;
     }
   };
+  
 
   return (
     <div className="flex min-h-screen bg-slate-50">

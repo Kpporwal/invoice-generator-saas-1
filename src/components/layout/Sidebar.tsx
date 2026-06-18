@@ -17,8 +17,11 @@ type Page =
   | 'create'
   | 'history'
   | 'preview'
-  | 'reports';
-
+  | 'reports'
+  | 'about'
+  | 'privacy'
+  | 'terms'
+  | 'contact';
 interface SidebarProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
@@ -33,7 +36,12 @@ const navItems: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
   id: 'reports',
   label: 'Reports',
   icon: BarChart3,
+  
 },
+{ id: 'about', label: 'About', icon: FileText },
+{ id: 'privacy', label: 'Privacy Policy', icon: FileText },
+{ id: 'terms', label: 'Terms & Conditions', icon: FileText },
+{ id: 'contact', label: 'Contact', icon: FileText },
 ];
 
 export default function Sidebar({ currentPage, onNavigate, onSignOut }: SidebarProps) {
