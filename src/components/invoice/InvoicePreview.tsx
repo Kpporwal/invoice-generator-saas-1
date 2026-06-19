@@ -52,37 +52,7 @@ export default function InvoicePreview({ invoice, onNavigate, onEdit, onDuplicat
 
   setGenerating(true);
   setError(null);
-  const handleWhatsAppShare = () => {
-  if (!invoice) return;
 
-  let number = invoice.customer.whatsappNumber || "";
-  number = number.replace(/\D/g, "");
-
-  if (number.length === 10) {
-    number = "91" + number;
-  }
-
-  const message = `Dear ${invoice.customer.name},
-
-Greetings from Kapil Tech Solution.
-
-Please find your Invoice.
-
-Invoice Number : ${invoice.invoiceNumber}
-
-Invoice Amount : ₹${invoice.calculations.grandTotal.toLocaleString("en-IN")}
-
-Kindly download the attached invoice.
-
-Thank you.
-
-Kapil Tech Solution`;
-
-  window.open(
-    `https://wa.me/${number}?text=${encodeURIComponent(message)}`,
-    "_blank"
-  );
-};
 
   // Scale wrapper save karo
   const wrapper = el.parentElement;
@@ -131,9 +101,9 @@ Invoice No : ${invoice.invoiceNumber}
 
 Amount : ₹${invoice.calculations.grandTotal.toLocaleString("en-IN")}
 
-Thank you for your business.
+Thank you for choosing BillNova.
 
-Kapil Tech Solution`;
+Team BillNova`;
 
   window.open(
     `https://wa.me/${number}?text=${encodeURIComponent(message)}`,

@@ -1,5 +1,5 @@
 /*
-# Create invoices table for multi-user InvoicePro app
+# Create invoices table for multi-user BillNova app
 
 1. New Tables
    - `invoices`

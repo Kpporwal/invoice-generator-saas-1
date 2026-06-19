@@ -15,7 +15,7 @@ interface InvoiceFormProps {
 }
 
 const emptyCompany: Company = {
-  name: 'Kapil Tech Solution',
+  name: 'BillNova by Kapil Tech Solutions',
   address: 'Kota, Rajasthan',
   gstNumber: '08ABCDE1234F1Z5',
   logo: '/logo.png'

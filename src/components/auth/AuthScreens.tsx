@@ -60,8 +60,8 @@ export default function AuthScreens() {
               <FileText size={24} className="text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">InvoicePro</h1>
-              <p className="text-sm text-emerald-300">GST Invoice Manager</p>
+              <h1 className="text-2xl font-bold text-white tracking-tight">BillNova</h1>
+              <p className="text-sm text-emerald-300">Smart GST Billing Software</p>
             </div>
           </div>
           <h2 className="text-4xl font-bold text-white leading-tight mb-4">
@@ -92,7 +92,7 @@ export default function AuthScreens() {
             <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
               <FileText size={20} className="text-white" />
             </div>
-            <h1 className="text-xl font-bold text-slate-800">InvoicePro</h1>
+            <h1 className="text-xl font-bold text-slate-800">BillNova</h1>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">

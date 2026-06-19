@@ -90,8 +90,8 @@ export default function Sidebar({ currentPage, onNavigate, onSignOut }: SidebarP
               <FileText size={18} className="text-white" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-slate-800 tracking-tight">InvoicePro</h1>
-              <p className="text-[11px] text-slate-400 font-medium">GST Invoice Manager</p>
+              <h1 className="text-base font-bold text-slate-800 tracking-tight">BillNova</h1>
+              <p className="text-[11px] text-slate-400 font-medium">Smart GST Billing Software</p>
             </div>
           </div>
         </div>
