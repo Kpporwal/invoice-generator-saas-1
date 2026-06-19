@@ -11,20 +11,23 @@ import InvoiceForm from './components/invoice/InvoiceForm';
 import InvoiceHistory from './components/invoice/InvoiceHistory';
 import InvoicePreview from './components/invoice/InvoicePreview';
 import Reports from './components/reports/Reports';
+import BusinessProfile from "./components/pages/BusinessProfile";
 import AuthScreens from './components/auth/AuthScreens';
 import type { Invoice } from './types';
 import { Loader2 } from 'lucide-react';
 
+
 type Page =
-  | 'dashboard'
-  | 'create'
-  | 'history'
-  | 'preview'
-  | 'reports'
-  | 'about'
-  | 'privacy'
-  | 'terms'
-  | 'contact';
+  | "dashboard"
+  | "create"
+  | "history"
+  | "preview"
+  | "reports"
+  | "business-profile"
+  | "about"
+  | "privacy"
+  | "terms"
+  | "contact";
 
 function AppContent() {
   const { user, loading, signOut } = useAuth();
@@ -120,10 +123,12 @@ function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
           />
         );
         case 'reports':
-  case 'reports':
   return (
     <Reports />
   );
+  case 'business-profile':
+  return <BusinessProfile />;
+  
   case 'about':
   return <About />;
 

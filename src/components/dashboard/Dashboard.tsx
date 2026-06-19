@@ -55,6 +55,83 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
   return (
     <Layout title="Dashboard" subtitle="Overview of your invoicing activity">
+      {/* Hero Section */}
+
+<div className="mb-8 rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-6 lg:p-8 text-white shadow-xl">
+
+  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+
+    <div>
+
+      <p className="text-emerald-100 text-sm font-medium">
+        👋 Welcome Back
+      </p>
+
+      <h1 className="text-3xl lg:text-4xl font-bold mt-2">
+        BillNova Dashboard
+      </h1>
+
+      <p className="mt-3 text-emerald-50 max-w-xl leading-7">
+        Manage invoices, monitor revenue and grow your business with
+        India's modern GST billing solution.
+      </p>
+
+      <button
+        onClick={() => onNavigate("create")}
+        className="mt-6 bg-white text-emerald-700 font-semibold px-5 py-3 rounded-xl hover:bg-emerald-50 transition shadow-lg"
+      >
+        + Create Invoice
+      </button>
+
+    </div>
+
+    <div className="bg-white/15 backdrop-blur-md rounded-2xl p-6 min-w-[260px]">
+
+      <p className="text-sm text-emerald-100">
+        Total Revenue
+      </p>
+
+      <h2 className="text-4xl font-bold mt-2">
+        {formatCurrency(stats.totalRevenue)}
+      </h2>
+
+      <div className="mt-6 flex justify-between">
+
+        <div>
+
+          <p className="text-xs text-emerald-100">
+            Invoices
+          </p>
+
+          <p className="text-xl font-bold">
+            {stats.totalInvoices}
+          </p>
+
+        </div>
+
+        <div>
+
+          <p className="text-xs text-emerald-100">
+            Paid
+          </p>
+
+          <p className="text-xl font-bold">
+            {stats.paidInvoices}
+          </p>
+
+        </div>
+
+      </div>
+
+      <p className="mt-5 text-xs text-emerald-100">
+        Smart GST Billing Software
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         {statCards.map(card => {
@@ -62,7 +139,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
           return (
             <div
               key={card.label}
-              className={`bg-gradient-to-br ${card.bg} rounded-xl p-4 border border-white/80 shadow-sm hover:shadow-md transition-shadow`}
+              className={`bg-gradient-to-br ${card.bg} rounded-xl p-4 border border-white/80 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300`}
             >
               <div className={`w-8 h-8 rounded-lg ${card.iconBg} flex items-center justify-center mb-3`}>
                 <Icon size={16} />
@@ -163,8 +240,46 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
               )}
             </p>
           </div>
+
+          <div className="mx-4 mb-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 p-5 text-white shadow-lg">
+
+  <h3 className="text-lg font-bold">
+    Business Health
+  </h3>
+
+  <p className="text-emerald-100 text-sm mt-1">
+    Excellent Performance 🚀
+  </p>
+
+  <div className="grid grid-cols-2 gap-4 mt-5">
+
+    <div>
+      <p className="text-xs text-emerald-100">
+        Paid Rate
+      </p>
+      <h2 className="text-2xl font-bold">
+        {stats.totalInvoices === 0
+          ? "0%"
+          : `${Math.round((stats.paidInvoices / stats.totalInvoices) * 100)}%`}
+      </h2>
+    </div>
+
+    <div>
+      <p className="text-xs text-emerald-100">
+        Total Customers
+      </p>
+      <h2 className="text-2xl font-bold">
+        {new Set(invoices.map(i => i.customer.name)).size}
+      </h2>
+    </div>
+
+  </div>
+
+</div>
         </div>
       </div>
     </Layout>
+    
   );
+  
 }

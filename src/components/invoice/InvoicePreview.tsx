@@ -279,14 +279,24 @@ html,body{
                   src="/logo.png"
                   alt="Logo"
                   style={{
-                    width: 70,
-                    height: 70,
+                    width:100,
+                    height:100,
                     objectFit: 'contain',
                     marginTop: 16,
                   }}
                 />
               <div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{invoice.company.name}</div>
+                <div
+  style={{
+    fontSize:11,
+    color:"#10b981",
+    fontWeight:600,
+    marginTop:2
+  }}
+>
+  Smart GST Billing Software
+</div>
                 <div style={{ fontSize: 11, color: '#64748b', whiteSpace: 'pre-line', marginTop: 4 }}>{invoice.company.address}</div>
 
                 <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
@@ -470,26 +480,67 @@ html,body{
            </div>
           {/* === FOOTER === */}
           <div style={{ marginTop: 32, paddingTop: 16, borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
-          <div
+          {/* === FOOTER === */}
+<div
   style={{
-    textAlign: 'center',
-    marginTop: 30,
-    borderTop: '1px solid #e5e7eb',
-    paddingTop: 10,
-    fontSize: 10,
-    color: '#64748b',
+    marginTop: 35,
+    paddingTop: 18,
+    borderTop: "1px solid #e2e8f0",
+    textAlign: "center",
+    color: "#64748b",
   }}
 >
-  <div>Thank you for your business!</div> 
-<div style={{ marginTop:-4, fontWeight: 600, paddingTop:1.5, fontSize: 10, color: '#64748b' }}>
- 
-    Powered by Kapil Tech Solution
+  <div
+    style={{
+      fontSize: 13,
+      fontWeight: 700,
+      color: "#0f172a",
+      marginBottom: 6,
+    }}
+  >
+    Thank you for your business!
+  </div>
 
+  <div
+    style={{
+      fontSize: 11,
+      lineHeight: 1.8,
+    }}
+  >
+    <strong style={{ color: "#10b981" }}>Generated using BillNova</strong>
 
-  
-    🌐 www.kapiltechsolution.in | ✉ support@kapiltechsolution.in
-    </div>
-  
+    <br />
+
+    Smart GST Billing Software
+
+    <br />
+
+    🌐 <span style={{ color: "#2563eb" }}>www.billnova.in</span>
+
+    <br />
+
+    ✉ support@billnova.in
+  </div>
+
+  <div
+    style={{
+      marginTop: 14,
+      paddingTop: 10,
+      borderTop: "1px dashed #cbd5e1",
+      fontSize: 10,
+      color: "#94a3b8",
+    }}
+  >
+    This is a computer generated GST invoice.
+
+    <br />
+
+    No signature required.
+
+    <br />
+
+    © 2026 BillNova. All rights reserved.
+  </div>
 </div>
           </div>
         </div>

@@ -5,8 +5,9 @@ export async function generateInvoicePDF(
   element: HTMLElement,
   invoiceNumber: string
 ): Promise<void> {
+
   const canvas = await html2canvas(element, {
-    scale: 3,
+    scale: 4,
     useCORS: true,
     backgroundColor: "#ffffff",
     logging: false,
@@ -23,20 +24,29 @@ export async function generateInvoicePDF(
     compress: true,
   });
 
+  pdf.setProperties({
+    title: `Invoice ${invoiceNumber}`,
+    subject: "GST Tax Invoice",
+    author: "BillNova",
+    creator: "BillNova Smart GST Billing Software",
+    keywords: "GST, Invoice, BillNova",
+  });
+
   const pageWidth = 210;
   const pageHeight = 297;
 
   const imgWidth = pageWidth;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-  // One page invoice
   pdf.addImage(
     imgData,
     "PNG",
     0,
     0,
     imgWidth,
-    Math.min(imgHeight, pageHeight)
+    Math.min(imgHeight, pageHeight),
+    undefined,
+    "FAST"
   );
 
   pdf.save(`Invoice-${invoiceNumber}.pdf`);

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Building2 } from "lucide-react";
 import {
   LayoutDashboard,
   FileText,
@@ -18,6 +19,7 @@ type Page =
   | 'history'
   | 'preview'
   | 'reports'
+  | "business-profile"
   | 'about'
   | 'privacy'
   | 'terms'
@@ -37,6 +39,11 @@ const navItems: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
   label: 'Reports',
   icon: BarChart3,
   
+},
+{
+  id: "business-profile",
+  label: "Business Profile",
+  icon: Building2,
 },
 { id: 'about', label: 'About', icon: FileText },
 { id: 'privacy', label: 'Privacy Policy', icon: FileText },
