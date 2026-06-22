@@ -47,9 +47,10 @@ export function InvoiceProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     setLoading(true);
     const { data, error } = await supabase
-      .from('invoices')
-      .select('*')
-      .order('created_at', { ascending: false });
+  .from("invoices")
+  .select("*")
+  .eq("user_id", user.id)
+  .order("created_at", { ascending: false });
 
     if (error) {
       console.error('Failed to load invoices:', error);
@@ -97,19 +98,30 @@ export function InvoiceProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString(),
     };
 
-    const row = {
-      invoice_number: withCalculations.invoiceNumber,
-      company: withCalculations.company,
-      customer: withCalculations.customer,
-      items: withCalculations.items,
-      calculations: withCalculations.calculations,
-      invoice_date: withCalculations.invoiceDate,
-      due_date: withCalculations.dueDate,
-      notes: withCalculations.notes,
-      terms_and_conditions: withCalculations.termsAndConditions,
-      upi_id: withCalculations.upiId,
-      status: withCalculations.status,
-    };
+    const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+if (!user) {
+  return { error: "User not logged in" };
+}
+
+const row = {
+  user_id: user.id,
+
+  invoice_number: withCalculations.invoiceNumber,
+  company: withCalculations.company,
+  customer: withCalculations.customer,
+  items: withCalculations.items,
+  calculations: withCalculations.calculations,
+  invoice_date: withCalculations.invoiceDate,
+  due_date: withCalculations.dueDate,
+  notes: withCalculations.notes,
+  terms_and_conditions: withCalculations.termsAndConditions,
+  upi_id: withCalculations.upiId,
+  status: withCalculations.status,
+};
+
 
     const { data, error } = await supabase.from('invoices').insert(row).select().maybeSingle();
     if (error) {
@@ -130,19 +142,20 @@ export function InvoiceProvider({ children }: { children: ReactNode }) {
     };
 
     const row = {
-      invoice_number: withCalculations.invoiceNumber,
-      company: withCalculations.company,
-      customer: withCalculations.customer,
-      items: withCalculations.items,
-      calculations: withCalculations.calculations,
-      invoice_date: withCalculations.invoiceDate,
-      due_date: withCalculations.dueDate,
-      notes: withCalculations.notes,
-      terms_and_conditions: withCalculations.termsAndConditions,
-      upi_id: withCalculations.upiId,
-      status: withCalculations.status,
-      updated_at: withCalculations.updatedAt,
-    };
+
+
+  invoice_number: withCalculations.invoiceNumber,
+  company: withCalculations.company,
+  customer: withCalculations.customer,
+  items: withCalculations.items,
+  calculations: withCalculations.calculations,
+  invoice_date: withCalculations.invoiceDate,
+  due_date: withCalculations.dueDate,
+  notes: withCalculations.notes,
+  terms_and_conditions: withCalculations.termsAndConditions,
+  upi_id: withCalculations.upiId,
+  status: withCalculations.status,
+};
 
     const { data, error } = await supabase.from('invoices').update(row).eq('id', invoice.id).select().maybeSingle();
     if (error) {

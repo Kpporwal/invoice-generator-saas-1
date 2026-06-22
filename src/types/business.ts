@@ -1,7 +1,5 @@
-export type { Company, Customer, InvoiceItem, InvoiceCalculations, Invoice, DashboardStats, InvoiceFormData } from './invoice';
 export interface BusinessProfile {
-  id?: string;
-  user_id?: string;
+  user_id: string;
 
   company_name: string;
   address: string;
@@ -15,7 +13,4 @@ export interface BusinessProfile {
 
   logo_url: string;
   signature_url: string;
-
-  created_at?: string;
-  updated_at?: string;
 }
