@@ -276,7 +276,8 @@ html,body{
             {/* Company info */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
               <img
-                  src="/logo.png"
+  src={invoice.company.logo || "/logo.png"}
+                  
                   alt="Logo"
                   style={{
                     width:100,
@@ -300,7 +301,17 @@ html,body{
                 <div style={{ fontSize: 11, color: '#64748b', whiteSpace: 'pre-line', marginTop: 4 }}>{invoice.company.address}</div>
 
                 <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-                    📞 +91 8000060853
+                   {invoice.company.phone && (
+  <div
+    style={{
+      fontSize: 11,
+      color: "#64748b",
+      marginTop: 2,
+    }}
+  >
+    📞 {invoice.company.phone}
+  </div>
+)}
                   </div>
 
                 {invoice.company.gstNumber && (
@@ -460,7 +471,8 @@ html,body{
           )}
             <div style={{ marginTop: 30, textAlign: 'right' }}>
              <img
-               src="/signature.png"
+  src={invoice.company.signature || "/signature.png"}
+               
                alt="Signature"
                style={{
                  height: 60,

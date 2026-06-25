@@ -4,6 +4,8 @@ import { useInvoiceStore } from '../../store/InvoiceContext';
 import { calculateInvoice, generateInvoiceNumber, formatCurrency, calculateItemAmount } from '../../utils/calculations';
 import type { Invoice, InvoiceItem, Company, Customer } from '../../types';
 import Layout from '../layout/Layout';
+import { useAuth } from "../../store/AuthContext";
+import { getBusinessProfile } from "../../lib/businessProfile";
 
 type Page = 'dashboard' | 'create' | 'history' | 'preview';
 
@@ -15,10 +17,17 @@ interface InvoiceFormProps {
 }
 
 const emptyCompany: Company = {
-  name: 'BillNova by Kapil Tech Solutions',
-  address: 'Kota, Rajasthan',
-  gstNumber: '08ABCDE1234F1Z5',
-  logo: '/logo.png'
+  name: "",
+  address: "",
+  gstNumber: "",
+
+  phone: "",
+  email: "",
+  website: "",
+  upiId: "",
+
+  logo: null,
+  signature: null,
 };
 const emptyCustomer: Customer = {
   name: '',
@@ -36,8 +45,11 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
   const { invoices, addInvoice, updateInvoice } = useInvoiceStore();
   const source = editingInvoice || duplicatingInvoice;
   const isEditing = !!editingInvoice && !duplicatingInvoice;
+  const { user } = useAuth();
 
-  const [company] = useState<Company>(source?.company ?? emptyCompany);
+  const [company, setCompany] = useState<Company>(
+  source?.company ?? emptyCompany
+);
   const [customer, setCustomer] = useState<Customer>(source?.customer ?? emptyCustomer);
   const [items, setItems] = useState<InvoiceItem[]>(source?.items ?? [{ ...emptyItem, id: generateId() }]);
   const [invoiceDate, setInvoiceDate] = useState(source?.invoiceDate ?? new Date().toISOString().split('T')[0]);
@@ -55,6 +67,31 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
       setInvoiceNumber(generateInvoiceNumber(invoices));
     }
   }, [source, invoices]);
+  useEffect(() => {
+  if (source || !user) return;
+
+  async function loadBusiness() {
+    const { data, error } = await getBusinessProfile(user!.id);
+
+    if (error || !data) return;
+
+    setCompany({
+  name: data.company_name || "",
+  address: data.address || "",
+  gstNumber: data.gst_number || "",
+
+  phone: data.phone || "",
+  email: data.email || "",
+  website: data.website || "",
+  upiId: data.upi_id || "",
+
+  logo: data.logo_url || "",
+  signature: data.signature_url || "",
+});
+  }
+
+  loadBusiness();
+}, [user, source]);
 
   const calculations = calculateInvoice(items);
 

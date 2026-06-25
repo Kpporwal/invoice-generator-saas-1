@@ -1,7 +1,11 @@
 
 
 import type React from "react"
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState, useEffect } from "react";
+import { useAuth } from "../../store/AuthContext";
+import { saveBusinessProfile } from "../../lib/businessProfile";
+import { getBusinessProfile } from "../../lib/businessProfile";
+
 
 
 /* ----------------------------------------------------------------------------
@@ -168,6 +172,7 @@ function validate(values: Fields): Partial<Record<FieldKey, string>> {
 
 /* =============================== Component ================================ */
 export default function BusinessProfile() {
+  const { user } = useAuth();
   const [values, setValues] = useState<Fields>(INITIAL)
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({})
   const [logo, setLogo] = useState<string | null>(null)
@@ -213,17 +218,89 @@ const sigInput = useRef<HTMLInputElement | null>(null)
     setDragField(null)
     readFile(e.dataTransfer.files?.[0], field === "logo" ? setLogo : setSignature)
   }
+  useEffect(() => {
+  if (!user) return;
 
-  const handleSave = () => {
-    setTouched({ companyName: true, gst: true, phone: true, email: true, upi: true })
-    if (Object.keys(errors).length > 0) return
-    setSaving(true)
-    setTimeout(() => {
-      setSaving(false)
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), 3200)
-    }, 1100)
+  async function loadProfile() {
+    const { data, error } = await getBusinessProfile(user!.id);
+
+    if (error || !data) return;
+
+    setValues({
+      companyName: data.company_name || "",
+      address: data.address || "",
+      gst: data.gst_number || "",
+      phone: data.phone || "",
+      email: data.email || "",
+      website: data.website || "",
+      upi: data.upi_id || "",
+    });
+
+    if (data.logo_url) {
+      setLogo(data.logo_url);
+    }
+
+    if (data.signature_url) {
+      setSignature(data.signature_url);
+    }
   }
+
+  loadProfile();
+}, [user]);
+
+  const handleSave = async () => {
+  setTouched({
+    companyName: true,
+    gst: true,
+    phone: true,
+    email: true,
+    upi: true,
+  });
+
+  if (Object.keys(errors).length > 0) return;
+
+
+
+  if (!user) {
+    alert("Please login first.");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    const profile = {
+      user_id: user.id,
+
+      company_name: values.companyName,
+      address: values.address,
+      gst_number: values.gst,
+
+      phone: values.phone,
+      email: values.email,
+      website: values.website,
+
+      upi_id: values.upi,
+
+      logo_url: logo ?? "",
+      signature_url: signature ?? "",
+    };
+
+    const { error } = await saveBusinessProfile(profile);
+
+    if (error) {
+      console.error(error);
+      alert(error.message);
+      return;
+    }
+
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleReset = () => {
     setValues(INITIAL)

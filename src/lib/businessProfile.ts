@@ -31,18 +31,21 @@ export async function uploadBusinessFile(
 
   const fileName = `${userId}/${folder}.${ext}`;
 
-  const { error } = await supabase.storage
-    .from("logos")
-    .upload(fileName, file, {
-      upsert: true,
-    });
+  const bucket = folder === "logo" ? "logos" : "signatures";
 
-  if (error) return { url: null, error };
+const { error } = await supabase.storage
+  .from(bucket)
+  .upload(fileName, file, {
+    upsert: true,
+  });
 
-  const { data } = supabase.storage
-    .from("logos")
-    .getPublicUrl(fileName);
+if (error) {
+  return { url: null, error };
+}
 
+const { data } = supabase.storage
+  .from(bucket)
+  .getPublicUrl(fileName);
   return {
     url: data.publicUrl,
     error: null,
