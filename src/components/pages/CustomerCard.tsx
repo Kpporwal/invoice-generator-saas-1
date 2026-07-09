@@ -9,11 +9,8 @@ interface Props {
 
 const colors = {
   blue: "bg-blue-100 text-blue-600",
-
   green: "bg-green-100 text-green-600",
-
   red: "bg-red-100 text-red-600",
-
   purple: "bg-purple-100 text-purple-600",
 };
 
@@ -24,30 +21,24 @@ export default function CustomerCard({
   color,
 }: Props) {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 border hover:shadow-xl transition">
-
-      <div className="flex justify-between items-center">
-
-        <div>
-
-          <p className="text-slate-500">
+    <div className="bg-white rounded-2xl border shadow-sm p-4 md:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs md:text-base text-slate-500">
             {title}
           </p>
 
-          <h2 className="text-3xl font-bold mt-2">
+          <h2 className="mt-2 text-xl md:text-3xl font-bold break-words">
             {value}
           </h2>
-
         </div>
 
         <div
-          className={`w-14 h-14 rounded-xl flex items-center justify-center ${colors[color]}`}
+          className={`w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0 ${colors[color]}`}
         >
           {icon}
         </div>
-
       </div>
-
     </div>
   );
 }

@@ -181,10 +181,10 @@ if (filter === "Overdue") {
 
       {/* Header */}
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
 
         <div>
-          <h1 className="text-4xl font-bold text-slate-800">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
             Customer Management
           </h1>
 
@@ -198,7 +198,7 @@ if (filter === "Overdue") {
   setEditingCustomer(null);
   setDrawerOpen(true);
 }}
-  className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg font-semibold transition-all"
+ className="w-full md:w-auto inline-flex justify-center items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl shadow-lg font-semibold transition-all"
 >
   <Plus className="w-5 h-5" />
   <span>Add Customer</span>
@@ -208,7 +208,7 @@ if (filter === "Overdue") {
 
       {/* Summary */}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
 
         <CustomerCard
           title="Total Customers"
@@ -242,13 +242,13 @@ if (filter === "Overdue") {
 
       {/* Search */}
 
-      <div className="mt-8 mb-6">
+      <div className="mt-6 mb-4">
   <CustomerSearch
     value={search}
     onChange={setSearch}
   />
 </div>
-<div className="mt-8">
+<div className="mt-4 overflow-x-auto">
   <CustomerFilters
     active={filter}
     onChange={setFilter}
