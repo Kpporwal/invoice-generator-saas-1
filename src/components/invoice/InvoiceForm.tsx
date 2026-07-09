@@ -6,8 +6,26 @@ import type { Invoice, InvoiceItem, Company, Customer } from '../../types';
 import Layout from '../layout/Layout';
 import { useAuth } from "../../store/AuthContext";
 import { getBusinessProfile } from "../../lib/businessProfile";
+import {
+  getCustomers,
+  addCustomer,
+  updateCustomer,
+} from "../../lib/customers";
+import { addLedgerEntry } from "../../lib/customerLedger";
 
-type Page = 'dashboard' | 'create' | 'history' | 'preview';
+
+type Page =
+  | 'dashboard'
+  | 'create'
+  | 'history'
+  | 'preview'
+  | 'reports'
+  | 'customers'
+  | 'business-profile'
+  | 'about'
+  | 'privacy'
+  | 'terms'
+  | 'contact';
 
 interface InvoiceFormProps {
   onNavigate: (page: Page) => void;
@@ -35,7 +53,15 @@ const emptyCustomer: Customer = {
   gstNumber: '',
   whatsappNumber: '',
 };
-const emptyItem: InvoiceItem = { id: '', name: '', description: '', quantity: 1, rate: 0, gstPercent: 18 };
+const emptyItem: InvoiceItem = {
+  id: '',
+  name: '',
+  description: '',
+  quantity: 1,
+  rate: 0,
+  gstPercent: 18,
+  discount: 0,
+};
 
 function generateId() {
   return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -58,8 +84,15 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
   const [status, setStatus] = useState<Invoice['status']>(source?.status ?? 'draft');
   const [notes, setNotes] = useState(source?.notes ?? '');
   const [terms, setTerms] = useState(source?.termsAndConditions ?? 'Payment is due within 30 days of the invoice date.');
-  const [upiId,] = useState('8000060853-2@ybl');
+  const [upiId, setUpiId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<
+  "credit" | "paid" | "partial"
+>("credit");
+
+const [amountPaid, setAmountPaid] = useState(0);
+
+const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -88,7 +121,9 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
   logo: data.logo_url || "",
   signature: data.signature_url || "",
 });
+setUpiId(data.upi_id || "");
   }
+
 
   loadBusiness();
 }, [user, source]);
@@ -114,10 +149,46 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
   }, []);
 
   const handleSubmit = async () => {
-    if (!company.name || !customer.name || items.length === 0) return;
-    setSaving(true);
-    setSaveError(null);
+  if (!company.name || !customer.name || items.length === 0) {
+    setSaveError("Company, customer and at least one item are required.");
+    return;
+  }
 
+  if (!user) {
+    setSaveError("Please login before saving invoice.");
+    return;
+  }
+
+  const invoiceTotal = Number(calculations.grandTotal || 0);
+
+  let receivedAmount = 0;
+
+  if (paymentStatus === "paid") {
+    receivedAmount = invoiceTotal;
+  }
+
+  if (paymentStatus === "partial") {
+    receivedAmount = Number(amountPaid || 0);
+
+    if (receivedAmount <= 0) {
+      setSaveError("Enter a valid received amount.");
+      return;
+    }
+
+    if (receivedAmount >= invoiceTotal) {
+      setSaveError(
+        "Partial payment must be less than invoice total. Use Full Payment instead."
+      );
+      return;
+    }
+  }
+
+  const dueAmount = Math.max(0, invoiceTotal - receivedAmount);
+
+  setSaving(true);
+  setSaveError(null);
+
+  try {
     const invoice: Invoice = {
       id: editingInvoice?.id ?? generateId(),
       invoiceNumber,
@@ -130,8 +201,16 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
       notes,
       termsAndConditions: terms,
       upiId,
-      status,
-      createdAt: editingInvoice?.createdAt ?? new Date().toISOString(),
+status,
+
+paymentStatus,
+amountPaid: receivedAmount,
+balanceDue: dueAmount,
+paymentMethod:
+  receivedAmount > 0 ? paymentMethod : null,
+
+createdAt:
+  editingInvoice?.createdAt ?? new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
@@ -141,11 +220,209 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
 
     if (result.error) {
       setSaveError(result.error);
-      setSaving(false);
-    } else {
-      onPreview(invoice);
+      return;
     }
-  };
+
+    // Customer + Ledger update only for NEW invoices.
+    // Invoice edit adjustment baad me handle karenge.
+    if (!isEditing) {
+      const { data: customersData, error: customersError } =
+        await getCustomers(user.id);
+
+      if (customersError) {
+        console.error("Customer load error:", customersError);
+      } else {
+       
+const normalize = (value: string | undefined | null) =>
+  (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+console.log("Invoice customer:", customer);
+console.log("Saved customers:", customersData);
+
+const matchedCustomer = customersData?.find((savedCustomer) => {
+  const sameName =
+    normalize(savedCustomer.customer_name) === normalize(customer.name);
+
+  return sameName;
+});
+        if (matchedCustomer?.id) {
+          const currentPurchase = Number(
+            matchedCustomer.total_purchase || 0
+          );
+
+          const currentOutstanding = Number(
+            matchedCustomer.outstanding || 0
+          );
+
+          const currentTotalPaid = Number(
+            matchedCustomer.total_paid || 0
+          );
+
+          // Purchase always increases by full invoice total.
+          // Outstanding increases only by unpaid amount.
+          // Total paid increases by amount received now.
+          const { error: updateError } = await updateCustomer(
+  matchedCustomer.id,
+  {
+    total_purchase: currentPurchase + invoiceTotal,
+    outstanding: currentOutstanding + dueAmount,
+    total_paid: currentTotalPaid + receivedAmount,
+
+    last_invoice_number: invoiceNumber,
+    last_invoice_date: invoiceDate,
+    last_invoice_due_date: dueDate,
+
+    ...(receivedAmount > 0
+      ? {
+          last_payment_date: new Date().toISOString(),
+        }
+      : {}),
+  }
+);
+          if (updateError) {
+            console.error(
+              "Customer update error:",
+              updateError
+            );
+          } else {
+            // Full invoice amount ledger entry.
+            const { error: invoiceLedgerError } =
+              await addLedgerEntry({
+                user_id: user.id,
+                customer_id: matchedCustomer.id,
+                entry_type: "invoice",
+                amount: invoiceTotal,
+                description: `Invoice ${invoiceNumber}`,
+                invoice_id: invoice.id,
+                payment_method: null,
+              });
+
+            if (invoiceLedgerError) {
+              console.error(
+                "Invoice ledger error:",
+                invoiceLedgerError
+              );
+            }
+
+            // Paid / Partial invoice par payment entry.
+            if (receivedAmount > 0) {
+              const { error: paymentLedgerError } =
+                await addLedgerEntry({
+                  user_id: user.id,
+                  customer_id: matchedCustomer.id,
+                  entry_type: "payment",
+                  amount: receivedAmount,
+                  description: `Payment received against Invoice ${invoiceNumber}`,
+                  invoice_id: invoice.id,
+                  payment_method: paymentMethod,
+                });
+
+              if (paymentLedgerError) {
+                console.error(
+                  "Payment ledger error:",
+                  paymentLedgerError
+                );
+              }
+            }
+          }
+        } else {
+  // Customer pehle se nahi mila, to invoice customer se new customer create karo.
+  const { data: newCustomer, error: createCustomerError } =
+
+await addCustomer({
+  user_id: user.id,
+
+  customer_name: customer.name.trim(),
+
+  phone: customer.whatsappNumber?.trim() || "",
+
+  address: customer.address || "",
+
+  gst_number: customer.gstNumber?.trim() || null,
+
+  opening_balance: 0,
+
+  total_purchase: invoiceTotal,
+
+  total_paid: receivedAmount,
+
+  outstanding: dueAmount,
+
+  last_purchase_date: new Date().toISOString(),
+
+  last_invoice_number: invoiceNumber,
+
+  last_invoice_date: invoiceDate,
+
+  last_invoice_due_date: dueDate,
+
+  last_payment_date:
+    receivedAmount > 0
+      ? new Date().toISOString()
+      : null,
+});
+  if (createCustomerError) {
+    console.error(
+      "New customer create error:",
+      createCustomerError
+    );
+  } else if (newCustomer?.id) {
+    // Full invoice ledger entry
+    const { error: invoiceLedgerError } =
+      await addLedgerEntry({
+        user_id: user.id,
+        customer_id: newCustomer.id,
+        entry_type: "invoice",
+        amount: invoiceTotal,
+        description: `Invoice ${invoiceNumber}`,
+        invoice_id: invoice.id,
+        payment_method: null,
+      });
+
+    if (invoiceLedgerError) {
+      console.error(
+        "New customer invoice ledger error:",
+        invoiceLedgerError
+      );
+    }
+
+    // Agar invoice banate time payment mila hai,
+    // to payment ledger entry bhi create hogi.
+    if (receivedAmount > 0) {
+      const { error: paymentLedgerError } =
+        await addLedgerEntry({
+          user_id: user.id,
+          customer_id: newCustomer.id,
+          entry_type: "payment",
+          amount: receivedAmount,
+          description: `Payment received against Invoice ${invoiceNumber}`,
+          invoice_id: invoice.id,
+          payment_method: paymentMethod,
+        });
+
+      if (paymentLedgerError) {
+        console.error(
+          "New customer payment ledger error:",
+          paymentLedgerError
+        );
+      }
+    }
+  }
+}
+      }
+    }
+
+    onPreview(invoice);
+  } catch (error) {
+    console.error("Invoice save error:", error);
+    setSaveError("Something went wrong while saving invoice.");
+  } finally {
+    setSaving(false);
+  }
+};
 
   const inputClass = "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white";
   const labelClass = "block text-xs font-semibold text-slate-600 mb-1.5";
@@ -276,6 +553,9 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
                   <th className="text-left py-2.5 px-2 text-xs font-semibold text-slate-500">Description</th>
                   <th className="text-right py-2.5 px-2 text-xs font-semibold text-slate-500 w-20">Qty</th>
                   <th className="text-right py-2.5 px-2 text-xs font-semibold text-slate-500 w-28">Rate</th>
+                  <th className="text-right py-2.5 px-2 text-xs font-semibold text-slate-500 w-24">
+  Discount
+</th>
                   <th className="text-right py-2.5 px-2 text-xs font-semibold text-slate-500 w-20">GST %</th>
                   <th className="text-right py-2.5 px-2 text-xs font-semibold text-slate-500 w-28">Amount</th>
                   <th className="w-8"></th>
@@ -297,6 +577,21 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
                     <td className="py-2 px-2">
                       <input type="number" value={item.rate} onChange={e => updateItem(item.id, 'rate', Number(e.target.value))} className="w-full px-2 py-1 text-sm border border-slate-200 rounded text-right focus:outline-none focus:ring-1 focus:ring-emerald-500/20 focus:border-emerald-500" min="0" step="0.01" />
                     </td>
+
+                     <td className="py-2 px-2">
+  <input
+    type="number"
+    value={item.discount}
+    onChange={(e) =>
+      updateItem(item.id, "discount", Number(e.target.value))
+    }
+    min="0"
+    max={item.quantity * item.rate}
+    step="0.01"
+    className="w-full px-2 py-1 text-sm border border-slate-200 rounded text-right focus:outline-none focus:ring-1 focus:ring-emerald-500/20 focus:border-emerald-500"
+  />
+</td>
+
                     <td className="py-2 px-2">
                       <select value={item.gstPercent} onChange={e => updateItem(item.id, 'gstPercent', Number(e.target.value))} className="w-full px-2 py-1 text-sm border border-slate-200 rounded text-right focus:outline-none focus:ring-1 focus:ring-emerald-500/20 focus:border-emerald-500">
                         <option value={0}>0%</option>
@@ -330,9 +625,22 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
                 </div>
                 <input type="text" value={item.name} onChange={e => updateItem(item.id, 'name', e.target.value)} className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Item name" />
                 <input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Description" />
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <input type="number" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', Number(e.target.value))} className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Qty" min="1" />
                   <input type="number" value={item.rate} onChange={e => updateItem(item.id, 'rate', Number(e.target.value))} className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Rate" min="0" step="0.01" />
+                 <input
+  type="number"
+  value={item.discount}
+  onChange={(e) =>
+    updateItem(item.id, "discount", Number(e.target.value))
+  }
+  className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
+  placeholder="Discount ₹"
+  min="0"
+  max={item.quantity * item.rate}
+  step="0.01"
+/>
+                 
                   <select value={item.gstPercent} onChange={e => updateItem(item.id, 'gstPercent', Number(e.target.value))} className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500">
                     <option value={0}>0%</option>
                     <option value={5}>5%</option>
@@ -353,6 +661,15 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
                 <span className="text-slate-500">Subtotal</span>
                 <span className="font-medium text-slate-700">{formatCurrency(calculations.subtotal)}</span>
               </div>
+              {calculations.discountTotal > 0 && (
+  <div className="flex justify-between text-sm">
+    <span className="text-slate-500">Discount</span>
+
+    <span className="font-medium text-red-600">
+      -{formatCurrency(calculations.discountTotal)}
+    </span>
+  </div>
+)}
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">GST Total</span>
                 <span className="font-medium text-slate-700">{formatCurrency(calculations.gstTotal)}</span>
@@ -378,6 +695,123 @@ export default function InvoiceForm({ onNavigate, onPreview, editingInvoice, dup
           </div>
          
         </div>
+
+         {/* Payment Status */}
+
+<div className="rounded-xl border bg-slate-50 p-5 space-y-4">
+  <div>
+    <h3 className="text-sm font-semibold text-slate-800">
+      Payment Status
+    </h3>
+
+    <p className="text-xs text-slate-500 mt-1">
+      Select how the customer is paying this invoice.
+    </p>
+  </div>
+
+  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <button
+      type="button"
+      onClick={() => {
+        setPaymentStatus("credit");
+        setAmountPaid(0);
+      }}
+      className={`rounded-xl border px-4 py-3 text-sm font-medium ${
+        paymentStatus === "credit"
+          ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+          : "bg-white text-slate-600 hover:bg-slate-50"
+      }`}
+    >
+      Credit / Udhar
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setPaymentStatus("paid");
+        setAmountPaid(Number(calculations.grandTotal || 0));
+      }}
+      className={`rounded-xl border px-4 py-3 text-sm font-medium ${
+        paymentStatus === "paid"
+          ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+          : "bg-white text-slate-600 hover:bg-slate-50"
+      }`}
+    >
+      Full Payment
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setPaymentStatus("partial");
+        setAmountPaid(0);
+      }}
+      className={`rounded-xl border px-4 py-3 text-sm font-medium ${
+        paymentStatus === "partial"
+          ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+          : "bg-white text-slate-600 hover:bg-slate-50"
+      }`}
+    >
+      Partial Payment
+    </button>
+  </div>
+
+  {paymentStatus === "partial" && (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-2">
+        Amount Received
+      </label>
+
+      <input
+        type="number"
+        min="0"
+        max={Number(calculations.grandTotal || 0)}
+        value={amountPaid}
+        onChange={(e) => setAmountPaid(Number(e.target.value))}
+        placeholder="Enter received amount"
+        className="w-full rounded-xl border bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
+      />
+    </div>
+  )}
+
+  {paymentStatus !== "credit" && (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-2">
+        Payment Method
+      </label>
+
+      <select
+        value={paymentMethod}
+        onChange={(e) => setPaymentMethod(e.target.value)}
+        className="w-full rounded-xl border bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
+      >
+        <option value="Cash">Cash</option>
+        <option value="UPI">UPI</option>
+        <option value="Bank Transfer">Bank Transfer</option>
+        <option value="Card">Card</option>
+        <option value="Cheque">Cheque</option>
+      </select>
+    </div>
+  )}
+
+  <div className="flex justify-between border-t pt-4 text-sm">
+    <span className="text-slate-500">
+      Amount Due After Invoice
+    </span>
+
+    <span className="font-bold text-red-600">
+      ₹
+      {Math.max(
+        0,
+        Number(calculations.grandTotal || 0) -
+          Number(amountPaid || 0)
+      ).toLocaleString("en-IN")}
+    </span>
+  </div>
+</div>
+
+{/* Bottom Actions */}
+
         {/* Bottom Actions */}
         <div className="flex items-center justify-between pt-2">
           <button onClick={() => onNavigate('dashboard')} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition-colors">

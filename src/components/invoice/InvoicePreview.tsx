@@ -18,7 +18,18 @@ import type { Invoice } from '../../types';
 import Layout from '../layout/Layout';
 
 
-type Page = 'dashboard' | 'create' | 'history' | 'preview';
+type Page =
+  | 'dashboard'
+  | 'create'
+  | 'history'
+  | 'preview'
+  | 'reports'
+  | 'customers'
+  | 'business-profile'
+  | 'about'
+  | 'privacy'
+  | 'terms'
+  | 'contact';
 
 interface InvoicePreviewProps {
   invoice: Invoice | null;
@@ -176,24 +187,57 @@ html,body{
     }
   };
 
-  const upiQrString = invoice.upiId
-    ? `upi://pay?pa=${invoice.upiId}&pn=${encodeURIComponent(invoice.company.name)}&am=${invoice.calculations.grandTotal}&cu=INR`
-    : '';
+  const qrPayableAmount = Number(invoice.balanceDue || 0);
+
+const upiQrString =
+  invoice.upiId && qrPayableAmount > 0
+    ? `upi://pay?pa=${invoice.upiId}&pn=${encodeURIComponent(
+        invoice.company.name
+      )}&am=${qrPayableAmount.toFixed(2)}&cu=INR`
+    : "";
 
   // Build GST summary by rate
-  const gstBreakdown = invoice.items.reduce<Record<number, { taxable: number; cgst: number; sgst: number; total: number }>>((acc, item) => {
-    const base = calculateItemBase(item);
-    const gstAmt = calculateItemGST(item);
-    if (!acc[item.gstPercent]) {
-      acc[item.gstPercent] = { taxable: 0, cgst: 0, sgst: 0, total: 0 };
+const gstBreakdown = invoice.items.reduce<
+  Record<
+    number,
+    {
+      taxable: number;
+      cgst: number;
+      sgst: number;
+      total: number;
     }
-    acc[item.gstPercent].taxable += base;
-    acc[item.gstPercent].cgst += gstAmt / 2;
-    acc[item.gstPercent].sgst += gstAmt / 2;
-    acc[item.gstPercent].total += gstAmt;
-    return acc;
-  }, {});
+  >
+>((acc, item) => {
+  const base = calculateItemBase(item);
 
+  const discount = Math.min(
+    Math.max(Number(item.discount || 0), 0),
+    base
+  );
+
+  const taxableAmount = base - discount;
+
+  // calculateItemGST already discount ke baad GST calculate karta hai
+  const gstAmount = calculateItemGST(item);
+
+  const gstPercent = Number(item.gstPercent || 0);
+
+  if (!acc[gstPercent]) {
+    acc[gstPercent] = {
+      taxable: 0,
+      cgst: 0,
+      sgst: 0,
+      total: 0,
+    };
+  }
+
+  acc[gstPercent].taxable += taxableAmount;
+  acc[gstPercent].cgst += gstAmount / 2;
+  acc[gstPercent].sgst += gstAmount / 2;
+  acc[gstPercent].total += gstAmount;
+
+  return acc;
+}, {});
   const statusColors: Record<string, string> = {
     draft: 'bg-slate-100 text-slate-600',
     sent: 'bg-blue-100 text-blue-700',
@@ -271,76 +315,294 @@ html,body{
         }}
       >
         
-          {/* === HEADER === */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 20, borderBottom: '3px solid #0f172a', marginBottom: 24 }}>
-            {/* Company info */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-              <img
-  src={invoice.company.logo || "/logo.png"}
-                  
-                  alt="Logo"
-                  style={{
-                    width:100,
-                    height:100,
-                    objectFit: 'contain',
-                    marginTop: 16,
-                  }}
-                />
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{invoice.company.name}</div>
-                <div
+          {/* === PROFESSIONAL INVOICE HEADER === */}
+<div
   style={{
-    fontSize:11,
-    color:"#10b981",
-    fontWeight:600,
-    marginTop:2
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 24,
+    paddingBottom: 18,
+    borderBottom: "3px solid #0f172a",
+    marginBottom: 20,
   }}
 >
-  Smart GST Billing Software
-</div>
-                <div style={{ fontSize: 11, color: '#64748b', whiteSpace: 'pre-line', marginTop: 4 }}>{invoice.company.address}</div>
-
-                <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-                   {invoice.company.phone && (
+  {/* BUSINESS DETAILS */}
   <div
     style={{
-      fontSize: 11,
-      color: "#64748b",
-      marginTop: 2,
+      display: "flex",
+      alignItems: "flex-start",
+      gap: 14,
+      flex: 1,
+      minWidth: 0,
     }}
   >
-    📞 {invoice.company.phone}
+    <img
+      src={invoice.company.logo || "/logo.png"}
+      alt="Business Logo"
+      style={{
+        width: 78,
+        height: 78,
+        objectFit: "contain",
+        flexShrink: 0,
+      }}
+    />
+
+    <div style={{ minWidth: 0 }}>
+      <div
+        style={{
+          fontSize: 20,
+          fontWeight: 800,
+          color: "#0f172a",
+          lineHeight: 1.2,
+        }}
+      >
+        {invoice.company.name}
+      </div>
+
+      <div
+        style={{
+          fontSize: 10,
+          color: "#10b981",
+          fontWeight: 700,
+          marginTop: 3,
+        }}
+      >
+        Smart GST Billing Software
+      </div>
+
+      {invoice.company.address && (
+        <div
+          style={{
+            fontSize: 10,
+            color: "#64748b",
+            whiteSpace: "pre-line",
+            marginTop: 7,
+            lineHeight: 1.5,
+          }}
+        >
+          {invoice.company.address}
+        </div>
+      )}
+
+      {invoice.company.phone && (
+        <div
+          style={{
+            fontSize: 10,
+            color: "#64748b",
+            marginTop: 3,
+          }}
+        >
+          Phone: {invoice.company.phone}
+        </div>
+      )}
+
+      {invoice.company.email && (
+        <div
+          style={{
+            fontSize: 10,
+            color: "#64748b",
+            marginTop: 2,
+          }}
+        >
+          Email: {invoice.company.email}
+        </div>
+      )}
+
+      {invoice.company.gstNumber && (
+        <div
+          style={{
+            fontSize: 10,
+            color: "#334155",
+            fontWeight: 700,
+            marginTop: 5,
+          }}
+        >
+          GSTIN: {invoice.company.gstNumber}
+        </div>
+      )}
+    </div>
   </div>
-)}
-                  </div>
 
-                {invoice.company.gstNumber && (
-                  <div style={{ fontSize: 11, color: '#334155', fontWeight: 600, marginTop: 4 }}>GSTIN: {invoice.company.gstNumber}</div>
-                )}
-              </div>
-            </div>
-            {/* Invoice meta */}
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#0f172a', letterSpacing: 2 }}>INVOICE</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginTop: 4 }}>{invoice.invoiceNumber}</div>
-              <div style={{ marginTop: 8, fontSize: 11, color: '#64748b' }}>
-                <div>Date: <span style={{ color: '#1e293b', fontWeight: 500 }}>{formatDate(invoice.invoiceDate)}</span></div>
-                <div>Due Date: <span style={{ color: '#1e293b', fontWeight: 500 }}>{formatDate(invoice.dueDate)}</span></div>
-              </div>
-            </div>
-          </div>
+  {/* INVOICE META */}
+  <div
+    style={{
+      width: 190,
+      flexShrink: 0,
+      textAlign: "right",
+    }}
+  >
+    <div
+      style={{
+        fontSize: 25,
+        fontWeight: 800,
+        color: "#0f172a",
+        letterSpacing: 1.5,
+        lineHeight: 1,
+      }}
+    >
+      TAX INVOICE
+    </div>
 
-          {/* === BILL TO === */}
-          <div style={{ marginBottom: 24 }}>
-            <div className="inv-label" style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Bill To</div>
-            <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{invoice.customer.name}</div>
-              <div style={{ fontSize: 11, color: '#64748b', whiteSpace: 'pre-line', marginTop: 2 }}>{invoice.customer.address}</div>
-                  {invoice.customer.gstNumber && (
-                                       <div>GSTIN: {invoice.customer.gstNumber}</div>
-                                )}
-            </div>
-          </div>
+    <div
+      style={{
+        display: "inline-block",
+        marginTop: 8,
+        padding: "4px 9px",
+        borderRadius: 4,
+        background: "#f1f5f9",
+        fontSize: 11,
+        fontWeight: 700,
+        color: "#334155",
+      }}
+    >
+      {invoice.invoiceNumber}
+    </div>
+
+    <div
+      style={{
+        marginTop: 10,
+        fontSize: 10,
+        color: "#64748b",
+        lineHeight: 1.8,
+      }}
+    >
+      <div>
+        Invoice Date:{" "}
+        <span style={{ color: "#1e293b", fontWeight: 600 }}>
+          {formatDate(invoice.invoiceDate)}
+        </span>
+      </div>
+
+      <div>
+        Due Date:{" "}
+        <span style={{ color: "#1e293b", fontWeight: 600 }}>
+          {formatDate(invoice.dueDate)}
+        </span>
+      </div>
+    </div>
+
+    {/* PAYMENT STATUS BADGE */}
+    
+  </div>
+</div>
+
+{/* === BILL TO === */}
+<div style={{ marginBottom: 22 }}>
+  <div
+    className="inv-label"
+    style={{
+      fontSize: 9,
+      fontWeight: 800,
+      color: "#94a3b8",
+      textTransform: "uppercase",
+      letterSpacing: "0.1em",
+      marginBottom: 6,
+    }}
+  >
+    Bill To
+  </div>
+
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 20,
+      background: "#f8fafc",
+      border: "1px solid #e2e8f0",
+      borderRadius: 8,
+      padding: "12px 15px",
+    }}
+  >
+    {/* CUSTOMER DETAILS */}
+    <div style={{ flex: 1 }}>
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 800,
+          color: "#0f172a",
+        }}
+      >
+        {invoice.customer.name}
+      </div>
+
+      {invoice.customer.address && (
+        <div
+          style={{
+            fontSize: 10,
+            color: "#64748b",
+            whiteSpace: "pre-line",
+            marginTop: 4,
+            lineHeight: 1.5,
+          }}
+        >
+          {invoice.customer.address}
+        </div>
+      )}
+
+      {invoice.customer.whatsappNumber && (
+        <div
+          style={{
+            fontSize: 10,
+            color: "#64748b",
+            marginTop: 3,
+          }}
+        >
+          Mobile: {invoice.customer.whatsappNumber}
+        </div>
+      )}
+
+      {invoice.customer.gstNumber && (
+        <div
+          style={{
+            fontSize: 10,
+            color: "#334155",
+            fontWeight: 700,
+            marginTop: 4,
+          }}
+        >
+          GSTIN: {invoice.customer.gstNumber}
+        </div>
+      )}
+    </div>
+
+    {/* BALANCE DUE QUICK VIEW */}
+    <div
+      style={{
+        minWidth: 120,
+        textAlign: "right",
+        paddingLeft: 15,
+        borderLeft: "1px solid #e2e8f0",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 9,
+          color: "#94a3b8",
+          fontWeight: 700,
+          textTransform: "uppercase",
+        }}
+      >
+        Balance Due
+      </div>
+
+      <div
+        style={{
+          marginTop: 4,
+          fontSize: 16,
+          fontWeight: 800,
+          color:
+            Number(invoice.balanceDue || 0) > 0
+              ? "#dc2626"
+              : "#059669",
+        }}
+      >
+        {formatCurrency(invoice.balanceDue || 0)}
+      </div>
+    </div>
+  </div>
+</div>
 
           {/* === ITEMS TABLE === */}
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
@@ -359,83 +621,603 @@ html,body{
               </tr>
             </thead>
             <tbody>
-              {invoice.items.map((item, idx) => {
-                const base = calculateItemBase(item);
-                const gstAmt = calculateItemGST(item);
-                const cgst = gstAmt / 2;
-                const sgst = gstAmt / 2;
-                return (
-                  <tr key={item.id} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '8px 12px', fontSize: 11, color: '#94a3b8' }}>{idx + 1}</td>
-                    <td style={{ padding: '8px 12px', fontWeight: 600, color: '#1e293b' }}>
-                      {item.name}
-                      {item.description && <div style={{ fontSize: 10, fontWeight: 400, color: '#64748b', marginTop: 1 }}>{item.description}</div>}
-                    </td>
-                    <td style={{ padding: '8px 12px', fontSize: 11, color: '#64748b' }}>-</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>{item.quantity}</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>{formatCurrency(item.rate)}</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>{formatCurrency(base)}</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                      <span style={{ display: 'inline-block', padding: '1px 6px', background: '#f0fdf4', color: '#166534', fontSize: 10, borderRadius: 3, fontWeight: 600 }}>{item.gstPercent}%</span>
-                    </td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontSize: 11 }}>{formatCurrency(cgst)}</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontSize: 11 }}>{formatCurrency(sgst)}</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>{formatCurrency(base + gstAmt)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+  {invoice.items.map((item, idx) => {
+    const base = calculateItemBase(item);
 
-          {/* === GST SUMMARY TABLE === */}
-          {Object.keys(gstBreakdown).length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>GST Summary</div>
-              <table style={{ width: 'auto', borderCollapse: 'collapse', minWidth: 400 }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
-                    <th style={{ padding: '6px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#64748b' }}>Rate</th>
-                    <th style={{ padding: '6px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: '#64748b' }}>Taxable Amount</th>
-                    <th style={{ padding: '6px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: '#64748b' }}>CGST</th>
-                    <th style={{ padding: '6px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: '#64748b' }}>SGST</th>
-                    <th style={{ padding: '6px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: '#64748b' }}>Total GST</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(gstBreakdown).map(([rate, vals]) => (
-                    <tr key={rate} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '6px 12px', fontSize: 11, fontWeight: 600 }}>{rate}%</td>
-                      <td style={{ padding: '6px 12px', textAlign: 'right', fontSize: 11 }}>{formatCurrency(vals.taxable)}</td>
-                      <td style={{ padding: '6px 12px', textAlign: 'right', fontSize: 11 }}>{formatCurrency(vals.cgst)}</td>
-                      <td style={{ padding: '6px 12px', textAlign: 'right', fontSize: 11 }}>{formatCurrency(vals.sgst)}</td>
-                      <td style={{ padding: '6px 12px', textAlign: 'right', fontSize: 11, fontWeight: 600 }}>{formatCurrency(vals.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+    const discount = Math.min(
+      Math.max(Number(item.discount || 0), 0),
+      base
+    );
+
+    const taxableAmount = base - discount;
+
+    const gstAmt = calculateItemGST(item);
+    const cgst = gstAmt / 2;
+    const sgst = gstAmt / 2;
+
+    const finalAmount = taxableAmount + gstAmt;
+
+    return (
+      <tr
+        key={item.id}
+        style={{
+          backgroundColor: idx % 2 === 0 ? "#fff" : "#f8fafc",
+          borderBottom: "1px solid #e2e8f0",
+        }}
+      >
+        <td
+          style={{
+            padding: "8px 12px",
+            fontSize: 11,
+            color: "#94a3b8",
+          }}
+        >
+          {idx + 1}
+        </td>
+
+        <td
+          style={{
+            padding: "8px 12px",
+            fontWeight: 600,
+            color: "#1e293b",
+          }}
+        >
+          {item.name}
+
+          {item.description && (
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 400,
+                color: "#64748b",
+                marginTop: 1,
+              }}
+            >
+              {item.description}
             </div>
           )}
 
-          {/* === TOTALS === */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-            <div style={{ width: 280 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 12 }}>
-                <span style={{ color: '#64748b' }}>Subtotal</span>
-                <span style={{ fontWeight: 600, color: '#334155' }}>{formatCurrency(invoice.calculations.subtotal)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 12 }}>
-                <span style={{ color: '#64748b' }}>GST Total</span>
-                <span style={{ fontWeight: 600, color: '#334155' }}>{formatCurrency(invoice.calculations.gstTotal)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 15, fontWeight: 700, borderTop: '3px solid #0f172a', marginTop: 4, color: '#0f172a' }}>
-                <span>Grand Total</span>
-                <span>{formatCurrency(invoice.calculations.grandTotal)}</span>
-              </div>
-              <div style={{ fontStyle: 'italic', fontSize: 10, color: '#64748b', marginTop: 4 }}>
-                {invoice.calculations.amountInWords}
-              </div>
+          {discount > 0 && (
+            <div
+              style={{
+                fontSize: 9,
+                fontWeight: 500,
+                color: "#dc2626",
+                marginTop: 2,
+              }}
+            >
+              Discount: -{formatCurrency(discount)}
             </div>
-          </div>
+          )}
+        </td>
+
+        <td
+          style={{
+            padding: "8px 12px",
+            fontSize: 11,
+            color: "#64748b",
+          }}
+        >
+          -
+        </td>
+
+        <td
+          style={{
+            padding: "8px 12px",
+            textAlign: "right",
+            color: "#334155",
+          }}
+        >
+          {item.quantity}
+        </td>
+
+        <td
+          style={{
+            padding: "8px 12px",
+            textAlign: "right",
+            color: "#334155",
+          }}
+        >
+          {formatCurrency(item.rate)}
+        </td>
+
+        <td
+          style={{
+            padding: "8px 12px",
+            textAlign: "right",
+            color: "#334155",
+          }}
+        >
+          {formatCurrency(taxableAmount)}
+        </td>
+
+        <td
+          style={{
+            padding: "8px 12px",
+            textAlign: "center",
+          }}
+        >
+          <span
+            style={{
+              display: "inline-block",
+              padding: "1px 6px",
+              background: "#f0fdf4",
+              color: "#166534",
+              fontSize: 10,
+              borderRadius: 3,
+              fontWeight: 600,
+            }}
+          >
+            {item.gstPercent}%
+          </span>
+        </td>
+
+        <td
+          style={{
+            padding: "8px 12px",
+            textAlign: "right",
+            color: "#334155",
+            fontSize: 11,
+          }}
+        >
+          {formatCurrency(cgst)}
+        </td>
+
+        <td
+          style={{
+            padding: "8px 12px",
+            textAlign: "right",
+            color: "#334155",
+            fontSize: 11,
+          }}
+        >
+          {formatCurrency(sgst)}
+        </td>
+
+        <td
+          style={{
+            padding: "8px 12px",
+            textAlign: "right",
+            fontWeight: 700,
+            color: "#0f172a",
+          }}
+        >
+          {formatCurrency(finalAmount)}
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
+          </table>
+
+          {/* === GST SUMMARY + TOTALS COMPACT ROW === */}
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 24,
+    marginTop: 10,
+    marginBottom: 14,
+    pageBreakInside: "avoid",
+  }}
+>
+  {/* LEFT: GST SUMMARY */}
+  <div
+    style={{
+      flex: 1,
+      minWidth: 0,
+    }}
+  >
+    {Object.keys(gstBreakdown).length > 0 && (
+      <>
+        <div
+          style={{
+            fontSize: 9,
+            fontWeight: 800,
+            color: "#94a3b8",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            marginBottom: 5,
+          }}
+        >
+          GST Summary
+        </div>
+
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+          }}
+        >
+          <thead>
+            <tr
+              style={{
+                borderBottom: "1px solid #cbd5e1",
+              }}
+            >
+              <th
+                style={{
+                  padding: "5px 6px",
+                  textAlign: "left",
+                  fontSize: 9,
+                  color: "#64748b",
+                  fontWeight: 700,
+                }}
+              >
+                Rate
+              </th>
+
+              <th
+                style={{
+                  padding: "5px 6px",
+                  textAlign: "right",
+                  fontSize: 9,
+                  color: "#64748b",
+                  fontWeight: 700,
+                }}
+              >
+                Taxable
+              </th>
+
+              <th
+                style={{
+                  padding: "5px 6px",
+                  textAlign: "right",
+                  fontSize: 9,
+                  color: "#64748b",
+                  fontWeight: 700,
+                }}
+              >
+                CGST
+              </th>
+
+              <th
+                style={{
+                  padding: "5px 6px",
+                  textAlign: "right",
+                  fontSize: 9,
+                  color: "#64748b",
+                  fontWeight: 700,
+                }}
+              >
+                SGST
+              </th>
+
+              <th
+                style={{
+                  padding: "5px 6px",
+                  textAlign: "right",
+                  fontSize: 9,
+                  color: "#64748b",
+                  fontWeight: 700,
+                }}
+              >
+                GST
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {Object.entries(gstBreakdown).map(([rate, vals]) => (
+              <tr
+                key={rate}
+                style={{
+                  borderBottom: "1px solid #f1f5f9",
+                }}
+              >
+                <td
+                  style={{
+                    padding: "5px 6px",
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {rate}%
+                </td>
+
+                <td
+                  style={{
+                    padding: "5px 6px",
+                    textAlign: "right",
+                    fontSize: 10,
+                  }}
+                >
+                  {formatCurrency(vals.taxable)}
+                </td>
+
+                <td
+                  style={{
+                    padding: "5px 6px",
+                    textAlign: "right",
+                    fontSize: 10,
+                  }}
+                >
+                  {formatCurrency(vals.cgst)}
+                </td>
+
+                <td
+                  style={{
+                    padding: "5px 6px",
+                    textAlign: "right",
+                    fontSize: 10,
+                  }}
+                >
+                  {formatCurrency(vals.sgst)}
+                </td>
+
+                <td
+                  style={{
+                    padding: "5px 6px",
+                    textAlign: "right",
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {formatCurrency(vals.total)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </>
+    )}
+  </div>
+
+  {/* RIGHT: TOTALS */}
+  <div
+    style={{
+      width: 245,
+      flexShrink: 0,
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        padding: "4px 0",
+        fontSize: 11,
+      }}
+    >
+      <span style={{ color: "#64748b" }}>Subtotal</span>
+
+      <span style={{ fontWeight: 600 }}>
+        {formatCurrency(invoice.calculations.subtotal)}
+      </span>
+    </div>
+
+    {Number(invoice.calculations.discountTotal || 0) > 0 && (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          padding: "4px 0",
+          fontSize: 11,
+        }}
+      >
+        <span style={{ color: "#64748b" }}>Discount</span>
+
+        <span
+          style={{
+            fontWeight: 600,
+            color: "#dc2626",
+          }}
+        >
+          -{formatCurrency(invoice.calculations.discountTotal)}
+        </span>
+      </div>
+    )}
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        padding: "4px 0",
+        fontSize: 11,
+      }}
+    >
+      <span style={{ color: "#64748b" }}>GST Total</span>
+
+      <span style={{ fontWeight: 600 }}>
+        {formatCurrency(invoice.calculations.gstTotal)}
+      </span>
+    </div>
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        padding: "7px 0 4px",
+        marginTop: 3,
+        borderTop: "2px solid #0f172a",
+        fontSize: 14,
+        fontWeight: 800,
+        color: "#0f172a",
+      }}
+    >
+      <span>Grand Total</span>
+
+      <span>
+        {formatCurrency(invoice.calculations.grandTotal)}
+      </span>
+    </div>
+
+    <div
+      style={{
+        marginTop: 3,
+        fontSize: 9,
+        fontStyle: "italic",
+        color: "#64748b",
+        lineHeight: 1.4,
+      }}
+    >
+      {invoice.calculations.amountInWords}
+    </div>
+  </div>
+</div>
+
+{/* === PAYMENT SUMMARY === */}
+<div
+  style={{
+    marginTop: 18,
+    marginBottom: 20,
+    padding: 16,
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    background: "#f8fafc",
+  }}
+>
+  <div
+    style={{
+      fontSize: 10,
+      fontWeight: 700,
+      color: "#94a3b8",
+      textTransform: "uppercase",
+      letterSpacing: "0.08em",
+      marginBottom: 10,
+    }}
+  >
+    Payment Summary
+  </div>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(3, 1fr)",
+      gap: 12,
+    }}
+  >
+    <div>
+      <div style={{ fontSize: 10, color: "#64748b" }}>
+        Grand Total
+      </div>
+
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 700,
+          color: "#0f172a",
+          marginTop: 2,
+        }}
+      >
+        {formatCurrency(invoice.calculations.grandTotal)}
+      </div>
+    </div>
+
+    <div>
+      <div style={{ fontSize: 10, color: "#64748b" }}>
+        Amount Received
+      </div>
+
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 700,
+          color: "#059669",
+          marginTop: 2,
+        }}
+      >
+        {formatCurrency(invoice.amountPaid || 0)}
+      </div>
+    </div>
+
+    <div>
+      <div style={{ fontSize: 10, color: "#64748b" }}>
+        Balance Due
+      </div>
+
+      <div
+        style={{
+          fontSize: 16,
+          fontWeight: 800,
+          color:
+            Number(invoice.balanceDue || 0) > 0
+              ? "#dc2626"
+              : "#059669",
+          marginTop: 2,
+        }}
+      >
+        {formatCurrency(invoice.balanceDue || 0)}
+      </div>
+    </div>
+  </div>
+
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 14,
+      paddingTop: 10,
+      borderTop: "1px solid #e2e8f0",
+      fontSize: 11,
+    }}
+  >
+    <div>
+      <span style={{ color: "#64748b" }}>
+        Payment Status:{" "}
+      </span>
+
+      <span
+        style={{
+          fontWeight: 700,
+          color:
+            invoice.paymentStatus === "paid"
+              ? "#059669"
+              : invoice.paymentStatus === "partial"
+              ? "#d97706"
+              : "#dc2626",
+          textTransform: "uppercase",
+        }}
+      >
+        {invoice.paymentStatus === "credit"
+          ? "Credit / Udhar"
+          : invoice.paymentStatus === "partial"
+          ? "Partial Payment"
+          : "Paid"}
+      </span>
+    </div>
+
+    {invoice.paymentMethod && (
+      <div>
+        <span style={{ color: "#64748b" }}>
+          Payment Method:{" "}
+        </span>
+
+        <span
+          style={{
+            fontWeight: 700,
+            color: "#334155",
+          }}
+        >
+          {invoice.paymentMethod}
+        </span>
+      </div>
+    )}
+  </div>
+
+  {Number(invoice.balanceDue || 0) > 0 && (
+    <div
+      style={{
+        marginTop: 12,
+        padding: "9px 12px",
+        borderRadius: 6,
+        background: "#fff7ed",
+        color: "#9a3412",
+        fontSize: 11,
+        fontWeight: 600,
+        textAlign: "center",
+      }}
+    >
+      {invoice.paymentStatus === "partial"
+        ? `${formatCurrency(invoice.amountPaid || 0)} received • ${formatCurrency(
+            invoice.balanceDue || 0
+          )} remaining`
+        : `${formatCurrency(invoice.balanceDue || 0)} payment pending`}
+      {" • "}Due by {formatDate(invoice.dueDate)}
+    </div>
+  )}
+</div>
 
           {/* === UPI QR CODE === */}
           {upiQrString && (
@@ -444,9 +1226,9 @@ html,body{
                 <QRCodeSVG value={upiQrString} size={90} level="M" />
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b' }}>Pay via UPI</div>
-                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 4 }}>Scan the QR code to make payment</div>
+                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 4 }}>Scan to pay the remaining balance</div>
                   <div style={{ fontSize: 10, color: '#334155', fontWeight: 600, marginTop: 2 }}>UPI ID: {invoice.upiId}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginTop: 6 }}>Amount: {formatCurrency(invoice.calculations.grandTotal)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginTop: 6 }}>Amount: {formatCurrency(qrPayableAmount)}</div>
                 </div>
               </div>
             </div>

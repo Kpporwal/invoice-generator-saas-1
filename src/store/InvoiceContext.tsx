@@ -30,8 +30,26 @@ function mapRowToInvoice(row: Record<string, unknown>): Invoice {
     notes: (row.notes as string) ?? '',
     termsAndConditions: (row.terms_and_conditions as string) ?? '',
     upiId: (row.upi_id as string) ?? '',
-    status: row.status as Invoice['status'],
-    createdAt: row.created_at as string,
+    status: row.status as Invoice["status"],
+
+paymentStatus:
+  (row.payment_status as Invoice["paymentStatus"]) ?? "credit",
+
+amountPaid:
+  Number(row.amount_paid || 0),
+
+balanceDue:
+  Number(
+    row.balance_due ??
+      (row.calculations as Invoice["calculations"])?.grandTotal ??
+      0
+  ),
+
+paymentMethod:
+  (row.payment_method as string) || null,
+
+createdAt: row.created_at as string,
+
     updatedAt: row.updated_at as string,
   };
 }
@@ -120,6 +138,10 @@ const row = {
   terms_and_conditions: withCalculations.termsAndConditions,
   upi_id: withCalculations.upiId,
   status: withCalculations.status,
+  payment_status: withCalculations.paymentStatus,
+amount_paid: withCalculations.amountPaid,
+balance_due: withCalculations.balanceDue,
+payment_method: withCalculations.paymentMethod,
 };
 
 
@@ -155,6 +177,10 @@ const row = {
   terms_and_conditions: withCalculations.termsAndConditions,
   upi_id: withCalculations.upiId,
   status: withCalculations.status,
+  payment_status: withCalculations.paymentStatus,
+amount_paid: withCalculations.amountPaid,
+balance_due: withCalculations.balanceDue,
+payment_method: withCalculations.paymentMethod,
 };
 
     const { data, error } = await supabase.from('invoices').update(row).eq('id', invoice.id).select().maybeSingle();

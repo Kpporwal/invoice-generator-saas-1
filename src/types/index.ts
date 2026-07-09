@@ -1,21 +1,11 @@
-export type { Company, Customer, InvoiceItem, InvoiceCalculations, Invoice, DashboardStats, InvoiceFormData } from './invoice';
-export interface BusinessProfile {
-  id?: string;
-  user_id?: string;
+export type {
+  Company,
+  Customer,
+  InvoiceItem,
+  InvoiceCalculations,
+  Invoice,
+  DashboardStats,
+  InvoiceFormData,
+} from './invoice';
 
-  company_name: string;
-  address: string;
-  gst_number: string;
-
-  phone: string;
-  email: string;
-  website: string;
-
-  upi_id: string;
-
-  logo_url: string;
-  signature_url: string;
-
-  created_at?: string;
-  updated_at?: string;
-}
+export type { BusinessProfile } from './business';

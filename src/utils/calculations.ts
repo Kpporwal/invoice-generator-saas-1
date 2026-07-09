@@ -1,26 +1,50 @@
 import type { InvoiceItem, InvoiceCalculations } from '../types';
 
-export function calculateItemAmount(item: InvoiceItem): number {
+export function calculateItemDiscount(item: InvoiceItem): number {
   const baseAmount = item.quantity * item.rate;
-  const gstAmount = baseAmount * (item.gstPercent / 100);
-  return baseAmount + gstAmount;
-}
-
-export function calculateItemGST(item: InvoiceItem): number {
-  return item.quantity * item.rate * (item.gstPercent / 100);
+  return Math.min(Math.max(Number(item.discount || 0), 0), baseAmount);
 }
 
 export function calculateItemBase(item: InvoiceItem): number {
   return item.quantity * item.rate;
 }
 
-export function calculateInvoice(items: InvoiceItem[]): InvoiceCalculations {
-  const subtotal = items.reduce((sum, item) => sum + calculateItemBase(item), 0);
-  const gstTotal = items.reduce((sum, item) => sum + calculateItemGST(item), 0);
-  const grandTotal = subtotal + gstTotal;
+export function calculateItemTaxableAmount(item: InvoiceItem): number {
+  return calculateItemBase(item) - calculateItemDiscount(item);
+}
+
+export function calculateItemGST(item: InvoiceItem): number {
+  const taxableAmount = calculateItemTaxableAmount(item);
+  return taxableAmount * (item.gstPercent / 100);
+}
+
+export function calculateItemAmount(item: InvoiceItem): number {
+  return calculateItemTaxableAmount(item) + calculateItemGST(item);
+}
+
+export function calculateInvoice(
+  items: InvoiceItem[]
+): InvoiceCalculations {
+  const subtotal = items.reduce(
+    (sum, item) => sum + calculateItemBase(item),
+    0
+  );
+
+  const discountTotal = items.reduce(
+    (sum, item) => sum + calculateItemDiscount(item),
+    0
+  );
+
+  const gstTotal = items.reduce(
+    (sum, item) => sum + calculateItemGST(item),
+    0
+  );
+
+  const grandTotal = subtotal - discountTotal + gstTotal;
 
   return {
     subtotal: Math.round(subtotal * 100) / 100,
+    discountTotal: Math.round(discountTotal * 100) / 100,
     gstTotal: Math.round(gstTotal * 100) / 100,
     grandTotal: Math.round(grandTotal * 100) / 100,
     amountInWords: numberToWords(grandTotal),

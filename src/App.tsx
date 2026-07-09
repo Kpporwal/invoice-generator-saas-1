@@ -1,3 +1,4 @@
+import CustomerManagement from "./components/pages/CustomerManagement";
 import About from './components/pages/About';
 import PrivacyPolicy from './components/pages/PrivacyPolicy';
 import TermsConditions from './components/pages/TermsConditions';
@@ -18,16 +19,17 @@ import { Loader2 } from 'lucide-react';
 
 
 type Page =
-  | "dashboard"
-  | "create"
-  | "history"
-  | "preview"
-  | "reports"
-  | "business-profile"
-  | "about"
-  | "privacy"
-  | "terms"
-  | "contact";
+  | 'dashboard'
+  | 'create'
+  | 'history'
+  | 'preview'
+  | 'reports'
+  | 'customers'
+  | 'business-profile'
+  | 'about'
+  | 'privacy'
+  | 'terms'
+  | 'contact';
 
 function AppContent() {
   const { user, loading, signOut } = useAuth();
@@ -122,6 +124,8 @@ function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
             onDuplicate={handleDuplicate}
           />
         );
+        case 'customers':
+  return <CustomerManagement />;
         case 'reports':
   return (
     <Reports />

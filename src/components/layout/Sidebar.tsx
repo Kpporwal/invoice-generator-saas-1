@@ -1,30 +1,33 @@
-import { useState } from 'react';
-import { Building2 } from "lucide-react";
 import {
   LayoutDashboard,
   FileText,
   PlusCircle,
   Clock,
   BarChart3,
+  Users,
+  Building2,
   Menu,
   X,
   ChevronRight,
   LogOut,
-} from 'lucide-react';
+} from "lucide-react";
 import { useAuth } from '../../store/AuthContext';
+import { useState } from "react";
 
 type Page =
-  | 'dashboard'
-  | 'create'
-  | 'history'
-  | 'preview'
-  | 'reports'
+  | "dashboard"
+  | "create"
+  | "history"
+  | "preview"
+  | "reports"
+  | "customers"
   | "business-profile"
-  | 'about'
-  | 'privacy'
-  | 'terms'
-  | 'contact';
-interface SidebarProps {
+  | "about"
+  | "privacy"
+  | "terms"
+  | "contact";
+  
+  interface SidebarProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
   onSignOut: () => Promise<void>;
@@ -39,6 +42,11 @@ const navItems: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
   label: 'Reports',
   icon: BarChart3,
   
+},
+{
+  id: 'customers',
+  label: 'Customers',
+  icon: Users,
 },
 {
   id: "business-profile",
@@ -155,3 +163,4 @@ export default function Sidebar({ currentPage, onNavigate, onSignOut }: SidebarP
     </>
   );
 }
+ 

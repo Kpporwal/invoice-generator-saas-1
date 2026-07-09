@@ -15,7 +15,18 @@ import { formatCurrency, formatDate } from '../../utils/calculations';
 import type { Invoice } from '../../types';
 import Layout from '../layout/Layout';
 
-type Page = 'dashboard' | 'create' | 'history' | 'preview';
+type Page =
+  | 'dashboard'
+  | 'create'
+  | 'history'
+  | 'preview'
+  | 'reports'
+  | 'customers'
+  | 'business-profile'
+  | 'about'
+  | 'privacy'
+  | 'terms'
+  | 'contact';
 
 interface InvoiceHistoryProps {
   onNavigate: (page: Page) => void;
