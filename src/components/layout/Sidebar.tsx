@@ -60,19 +60,27 @@ const navItems: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
 ];
 
 export default function Sidebar({ currentPage, onNavigate, onSignOut }: SidebarProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { user } = useAuth();
+ const [mobileOpen, setMobileOpen] = useState(false);
+const [signingOut, setSigningOut] = useState(false);
 
+const { user } = useAuth();
   const handleNav = (page: Page) => {
     onNavigate(page);
     setMobileOpen(false);
   };
 
-  const handleSignOut = async () => {
-    setMobileOpen(false);
-    await onSignOut();
-  };
+ const handleSignOut = async () => {
+  if (signingOut) return;
 
+  setSigningOut(true);
+
+  try {
+    await onSignOut();
+  } catch (error) {
+    console.error("Sign out failed:", error);
+    setSigningOut(false);
+  }
+};
   return (
     <>
       {/* Mobile toggle */}
@@ -152,12 +160,20 @@ export default function Sidebar({ currentPage, onNavigate, onSignOut }: SidebarP
 
           {/* Sign Out */}
           <button
-            onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors group"
-          >
-            <LogOut size={18} className="text-slate-400 group-hover:text-red-500" />
-            Sign Out
-          </button>
+  type="button"
+  onClick={() => {
+    void handleSignOut();
+  }}
+  disabled={signingOut}
+  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors group disabled:opacity-60 disabled:cursor-not-allowed"
+>
+  <LogOut
+    size={18}
+    className="text-slate-400 group-hover:text-red-500"
+  />
+
+  {signingOut ? "Signing Out..." : "Sign Out"}
+</button>
         </div>
       </aside>
     </>

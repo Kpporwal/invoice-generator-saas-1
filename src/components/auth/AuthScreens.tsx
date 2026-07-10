@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { FileText, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
 
-type AuthView = 'login' | 'signup' | 'forgot';
+type AuthView = 'login'  | 'forgot';
 
 export default function AuthScreens() {
   const [view, setView] = useState<AuthView>('login');
@@ -12,7 +12,7 @@ export default function AuthScreens() {
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const { signIn, signUp, resetPassword } = useAuth();
+  const { signIn, resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,17 +22,13 @@ export default function AuthScreens() {
 
     try {
       if (view === 'login') {
-        const { error: err } = await signIn(email, password);
-        if (err) setError(err);
-      } else if (view === 'signup') {
-        const { error: err } = await signUp(email, password);
-        if (err) setError(err);
-        else setSuccess('Account created successfully! You are now signed in.');
-      } else {
-        const { error: err } = await resetPassword(email);
-        if (err) setError(err);
-        else setSuccess('Password reset email sent! Check your inbox.');
-      }
+  const { error: err } = await signIn(email, password);
+  if (err) setError(err);
+} else {
+  const { error: err } = await resetPassword(email);
+  if (err) setError(err);
+  else setSuccess('Password reset email sent! Check your inbox.');
+}
     } finally {
       setSubmitting(false);
     }
@@ -109,12 +105,12 @@ export default function AuthScreens() {
               )}
               <h2 className="text-xl font-bold text-slate-800">
                 {view === 'login' && 'Welcome back'}
-                {view === 'signup' && 'Create account'}
+            
                 {view === 'forgot' && 'Reset password'}
               </h2>
               <p className="text-sm text-slate-500 mt-1">
                 {view === 'login' && 'Sign in to manage your invoices'}
-                {view === 'signup' && 'Start creating professional invoices'}
+              
                 {view === 'forgot' && 'Enter your email to receive a reset link'}
               </p>
             </div>
@@ -162,7 +158,7 @@ export default function AuthScreens() {
                       placeholder="Min 6 characters"
                       required
                       minLength={6}
-                      autoComplete={view === 'login' ? 'current-password' : 'new-password'}
+                      autoComplete="current-password"
                     />
                   </div>
                 </div>
@@ -175,7 +171,7 @@ export default function AuthScreens() {
               >
                 {submitting && <Loader2 size={16} className="animate-spin" />}
                 {view === 'login' && 'Sign In'}
-                {view === 'signup' && 'Create Account'}
+                
                 {view === 'forgot' && 'Send Reset Link'}
               </button>
             </form>
@@ -183,24 +179,13 @@ export default function AuthScreens() {
             {/* Footer links */}
             <div className="mt-6 pt-4 border-t border-slate-100 text-center text-sm text-slate-500">
               {view === 'login' && (
-                <>
-                  <button onClick={() => switchView('forgot')} className="text-emerald-600 hover:text-emerald-700 font-medium">
-                    Forgot password?
-                  </button>
-                  <span className="mx-2 text-slate-300">|</span>
-                  <button onClick={() => switchView('signup')} className="text-emerald-600 hover:text-emerald-700 font-medium">
-                    Create account
-                  </button>
-                </>
-              )}
-              {view === 'signup' && (
-                <span>
-                  Already have an account?{' '}
-                  <button onClick={() => switchView('login')} className="text-emerald-600 hover:text-emerald-700 font-medium">
-                    Sign in
-                  </button>
-                </span>
-              )}
+  <button
+    onClick={() => switchView('forgot')}
+    className="text-emerald-600 hover:text-emerald-700 font-medium"
+  >
+    Forgot password?
+  </button>
+)}
               {view === 'forgot' && (
                 <span>
                   Remember your password?{' '}

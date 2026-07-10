@@ -159,6 +159,11 @@ const INITIAL: Fields = {
 function validate(values: Fields): Partial<Record<FieldKey, string>> {
   const e: Partial<Record<FieldKey, string>> = {}
   if (!values.companyName.trim()) e.companyName = "Company name is required"
+  if (!values.phone.trim())
+  e.phone = "Phone number is required"
+
+if (!values.address.trim())
+  e.address = "Business address is required"
   if (values.gst && !/^[0-9A-Z]{15}$/.test(values.gst.trim()))
     e.gst = "GST must be 15 characters (e.g. 29ABCDE1234F1Z5)"
   if (values.phone && !/^[0-9+\-\s()]{7,}$/.test(values.phone.trim()))
@@ -172,7 +177,7 @@ function validate(values: Fields): Partial<Record<FieldKey, string>> {
 
 /* =============================== Component ================================ */
 export default function BusinessProfile() {
-  const { user } = useAuth();
+  const { user, refreshProfileStatus } = useAuth();
   const [values, setValues] = useState<Fields>(INITIAL)
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({})
   const [logo, setLogo] = useState<string | null>(null)
@@ -180,6 +185,7 @@ export default function BusinessProfile() {
   const [dragField, setDragField] = useState<"logo" | "signature" | null>(null)
   const [saving, setSaving] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const [profileLocked, setProfileLocked] = useState(false)
 
   const logoInput = useRef<HTMLInputElement | null>(null)
 const sigInput = useRef<HTMLInputElement | null>(null)
@@ -226,7 +232,9 @@ const sigInput = useRef<HTMLInputElement | null>(null)
 
     if (error || !data) return;
 
-    setValues({
+setProfileLocked(data.profile_completed === true);
+
+setValues({
       companyName: data.company_name || "",
       address: data.address || "",
       gst: data.gst_number || "",
@@ -250,13 +258,14 @@ const sigInput = useRef<HTMLInputElement | null>(null)
 
   const handleSave = async () => {
   setTouched({
-    companyName: true,
-    gst: true,
-    phone: true,
-    email: true,
-    upi: true,
-  });
-
+  companyName: true,
+  gst: true,
+  phone: true,
+  email: true,
+  website: true,
+  upi: true,
+  address: true,
+});
   if (Object.keys(errors).length > 0) return;
 
 
@@ -270,32 +279,34 @@ const sigInput = useRef<HTMLInputElement | null>(null)
 
   try {
     const profile = {
-      user_id: user.id,
+  user_id: user.id,
 
-      company_name: values.companyName,
-      address: values.address,
-      gst_number: values.gst,
+  company_name: values.companyName.trim(),
+  address: values.address.trim(),
+  gst_number: values.gst.trim(),
 
-      phone: values.phone,
-      email: values.email,
-      website: values.website,
+  phone: values.phone.trim(),
+  email: values.email.trim(),
+  website: values.website.trim(),
 
-      upi_id: values.upi,
+  upi_id: values.upi.trim(),
 
-      logo_url: logo ?? "",
-      signature_url: signature ?? "",
-    };
+  logo_url: logo ?? "",
+  signature_url: signature ?? "",
 
+  profile_completed: true,
+};
     const { error } = await saveBusinessProfile(profile);
+if (error) {
+  console.error(error);
+  alert(error.message);
+  return;
+}
 
-    if (error) {
-      console.error(error);
-      alert(error.message);
-      return;
-    }
+await refreshProfileStatus();
 
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+setShowToast(true);
+setTimeout(() => setShowToast(false), 3000);
 
   } finally {
     setSaving(false);
@@ -373,6 +384,7 @@ const sigInput = useRef<HTMLInputElement | null>(null)
                   className="sm:col-span-2"
                   label="Company Name"
                   required
+                  disabled={profileLocked}
                   icon={<I.Building className="h-4 w-4" />}
                   placeholder="Acme Enterprises Pvt. Ltd."
                   value={values.companyName}
@@ -383,6 +395,7 @@ const sigInput = useRef<HTMLInputElement | null>(null)
                 />
                 <Field
                   label="GST Number"
+                  disabled={profileLocked}
                   icon={<I.Hash className="h-4 w-4" />}
                   placeholder="29ABCDE1234F1Z5"
                   value={values.gst}
@@ -394,6 +407,7 @@ const sigInput = useRef<HTMLInputElement | null>(null)
                 />
                 <Field
                   label="Phone Number"
+                  required
                   icon={<I.Phone className="h-4 w-4" />}
                   placeholder="+91 98765 43210"
                   value={values.phone}
@@ -434,16 +448,18 @@ const sigInput = useRef<HTMLInputElement | null>(null)
                   hint="Used to auto-generate a payment QR code on invoices."
                 />
                 <Field
-                  as="textarea"
-                  className="sm:col-span-2"
-                  label="Business Address"
-                  icon={<I.MapPin className="h-4 w-4" />}
-                  placeholder="Street, City, State, PIN"
-                  value={values.address}
-                  onChange={setField("address")}
-                  onBlur={blur("address")}
-                  valid={!!values.address.trim()}
-                />
+  as="textarea"
+  className="sm:col-span-2"
+  label="Business Address"
+  required
+  icon={<I.MapPin className="h-4 w-4" />}
+  placeholder="Street, City, State, PIN"
+  value={values.address}
+  onChange={setField("address")}
+  onBlur={blur("address")}
+  error={touched.address ? errors.address : undefined}
+  valid={!!values.address.trim()}
+/>
               </div>
             </Card>
 
@@ -595,6 +611,7 @@ type FieldProps = {
   valid?: boolean
   hint?: string
   className?: string
+  disabled?: boolean
   uppercase?: boolean
   as?: "input" | "textarea"
 }
@@ -613,9 +630,10 @@ function Field({
   className = "",
   uppercase,
   as = "input",
+    disabled,
 }: FieldProps) {
   const base =
-    "peer w-full rounded-xl border bg-white py-2.5 pl-10 pr-9 text-sm text-slate-800 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400"
+  "peer w-full rounded-xl border bg-white py-2.5 pl-10 pr-9 text-sm text-slate-800 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 disabled:opacity-80"
   const state = error
     ? "border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-100"
     : "border-slate-200 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 hover:border-slate-300"
@@ -642,6 +660,7 @@ function Field({
             value={value}
             onChange={onChange}
             onBlur={onBlur}
+            disabled={disabled}
           />
         ) : (
           <input
@@ -650,6 +669,7 @@ function Field({
             value={value}
             onChange={onChange}
             onBlur={onBlur}
+            disabled={disabled}
           />
         )}
         {valid && !error && as === "input" && (

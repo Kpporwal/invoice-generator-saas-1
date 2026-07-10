@@ -1,54 +1,90 @@
 import CustomerManagement from "./components/pages/CustomerManagement";
-import About from './components/pages/About';
-import PrivacyPolicy from './components/pages/PrivacyPolicy';
-import TermsConditions from './components/pages/TermsConditions';
-import Contact from './components/pages/Contact';
-import { useState, useCallback } from 'react';
-import { AuthProvider, useAuth } from './store/AuthContext';
-import { InvoiceProvider } from './store/InvoiceContext';
-import Sidebar from './components/layout/Sidebar';
-import Dashboard from './components/dashboard/Dashboard';
-import InvoiceForm from './components/invoice/InvoiceForm';
-import InvoiceHistory from './components/invoice/InvoiceHistory';
-import InvoicePreview from './components/invoice/InvoicePreview';
-import Reports from './components/reports/Reports';
-import BusinessProfile from "./components/pages/BusinessProfile";
-import AuthScreens from './components/auth/AuthScreens';
-import type { Invoice } from './types';
-import { Loader2 } from 'lucide-react';
+import About from "./components/pages/About";
+import PrivacyPolicy from "./components/pages/PrivacyPolicy";
+import TermsConditions from "./components/pages/TermsConditions";
+import Contact from "./components/pages/Contact";
 
+import { useState, useCallback } from "react";
+import { AuthProvider, useAuth } from "./store/AuthContext";
+import { InvoiceProvider } from "./store/InvoiceContext";
+
+import Sidebar from "./components/layout/Sidebar";
+import Dashboard from "./components/dashboard/Dashboard";
+import InvoiceForm from "./components/invoice/InvoiceForm";
+import InvoiceHistory from "./components/invoice/InvoiceHistory";
+import InvoicePreview from "./components/invoice/InvoicePreview";
+import Reports from "./components/reports/Reports";
+import BusinessProfile from "./components/pages/BusinessProfile";
+import AuthScreens from "./components/auth/AuthScreens";
+
+import type { Invoice } from "./types";
+import { Loader2 } from "lucide-react";
 
 type Page =
-  | 'dashboard'
-  | 'create'
-  | 'history'
-  | 'preview'
-  | 'reports'
-  | 'customers'
-  | 'business-profile'
-  | 'about'
-  | 'privacy'
-  | 'terms'
-  | 'contact';
+  | "dashboard"
+  | "create"
+  | "history"
+  | "preview"
+  | "reports"
+  | "customers"
+  | "business-profile"
+  | "about"
+  | "privacy"
+  | "terms"
+  | "contact";
 
 function AppContent() {
-  const { user, loading, signOut } = useAuth();
+  const {
+    user,
+    loading,
+    profileLoading,
+    profileCompleted,
+    signOut,
+  } = useAuth();
 
+  // Checking Supabase authentication session
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex items-center gap-3 text-slate-500">
           <Loader2 size={24} className="animate-spin" />
-          <span className="text-sm font-medium">Loading...</span>
+
+          <span className="text-sm font-medium">
+            Loading...
+          </span>
         </div>
       </div>
     );
   }
 
+  // User not logged in
   if (!user) {
     return <AuthScreens />;
   }
 
+  // Checking Business Profile
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex items-center gap-3 text-slate-500">
+          <Loader2 size={24} className="animate-spin" />
+
+          <span className="text-sm font-medium">
+            Checking business profile...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Business Profile incomplete / missing
+  if (!profileCompleted) {
+    return (
+      <BusinessProfileSetupGate onSignOut={signOut} />
+    );
+  }
+
+  // Business Profile complete → Full BillNova App
   return (
     <InvoiceProvider>
       <AppShell onSignOut={signOut} />
@@ -56,48 +92,103 @@ function AppContent() {
   );
 }
 
-function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
-  const [currentPage, setCurrentPage] = useState<Page>('dashboard');
-  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
-  const [duplicatingInvoice, setDuplicatingInvoice] = useState<Invoice | null>(null);
-  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+function BusinessProfileSetupGate({
+  onSignOut,
+}: {
+  onSignOut: () => Promise<void>;
+}) {
+  return (
+    <div className="min-h-screen bg-slate-50">
+
+      {/* Setup Header */}
+
+      <div className="flex items-center justify-between gap-4 border-b bg-white px-4 py-3 shadow-sm">
+
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold text-slate-800">
+            Complete Business Profile
+          </h1>
+
+          <p className="text-xs text-slate-500">
+            Complete your business details to unlock BillNova.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            void onSignOut();
+          }}
+          className="shrink-0 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+        >
+          Logout
+        </button>
+
+      </div>
+
+      {/* Existing Business Profile Page */}
+
+      <BusinessProfile />
+
+    </div>
+  );
+}
+
+function AppShell({
+  onSignOut,
+}: {
+  onSignOut: () => Promise<void>;
+}) {
+  const [currentPage, setCurrentPage] =
+    useState<Page>("dashboard");
+
+  const [editingInvoice, setEditingInvoice] =
+    useState<Invoice | null>(null);
+
+  const [duplicatingInvoice, setDuplicatingInvoice] =
+    useState<Invoice | null>(null);
+
+  const [previewInvoice, setPreviewInvoice] =
+    useState<Invoice | null>(null);
 
   const handleNavigate = useCallback((page: Page) => {
-  setCurrentPage(page);
+    setCurrentPage(page);
 
-  if (page !== 'preview') {
-    setPreviewInvoice(null);
-  }
+    if (page !== "preview") {
+      setPreviewInvoice(null);
+    }
 
-  if (page === 'create') {
-    setEditingInvoice(null);
-    setDuplicatingInvoice(null);
-  }
-}, []);
+    if (page === "create") {
+      setEditingInvoice(null);
+      setDuplicatingInvoice(null);
+    }
+  }, []);
 
   const handleEdit = useCallback((invoice: Invoice) => {
     setEditingInvoice(invoice);
     setDuplicatingInvoice(null);
-    setCurrentPage('create');
+    setCurrentPage("create");
   }, []);
 
   const handleDuplicate = useCallback((invoice: Invoice) => {
     setDuplicatingInvoice(invoice);
     setEditingInvoice(null);
-    setCurrentPage('create');
+    setCurrentPage("create");
   }, []);
 
   const handlePreview = useCallback((invoice: Invoice) => {
     setPreviewInvoice(invoice);
-    setCurrentPage('preview');
+    setCurrentPage("preview");
   }, []);
 
   const renderPage = () => {
-    switch (currentPage)
-     {
-      case 'dashboard':
-        return <Dashboard onNavigate={handleNavigate} />;
-      case 'create':
+    switch (currentPage) {
+      case "dashboard":
+        return (
+          <Dashboard onNavigate={handleNavigate} />
+        );
+
+      case "create":
         return (
           <InvoiceForm
             onNavigate={handleNavigate}
@@ -106,7 +197,8 @@ function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
             duplicatingInvoice={duplicatingInvoice}
           />
         );
-      case 'history':
+
+      case "history":
         return (
           <InvoiceHistory
             onNavigate={handleNavigate}
@@ -115,7 +207,8 @@ function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
             onPreview={handlePreview}
           />
         );
-      case 'preview':
+
+      case "preview":
         return (
           <InvoicePreview
             invoice={previewInvoice}
@@ -124,38 +217,48 @@ function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
             onDuplicate={handleDuplicate}
           />
         );
-        case 'customers':
-  return <CustomerManagement />;
-        case 'reports':
-  return (
-    <Reports />
-  );
-  case 'business-profile':
-  return <BusinessProfile />;
-  
-  case 'about':
-  return <About />;
 
-case 'privacy':
-  return <PrivacyPolicy />;
+      case "customers":
+        return <CustomerManagement />;
 
-case 'terms':
-  return <TermsConditions />;
+      case "reports":
+        return <Reports />;
 
-case 'contact':
-  return <Contact />;
+      case "business-profile":
+        return <BusinessProfile />;
+
+      case "about":
+        return <About />;
+
+      case "privacy":
+        return <PrivacyPolicy />;
+
+      case "terms":
+        return <TermsConditions />;
+
+      case "contact":
+        return <Contact />;
+
       default:
-        return <Dashboard onNavigate={handleNavigate} />;
+        return (
+          <Dashboard onNavigate={handleNavigate} />
+        );
     }
   };
-  
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <Sidebar currentPage={currentPage} onNavigate={handleNavigate} onSignOut={onSignOut} />
+
+      <Sidebar
+        currentPage={currentPage}
+        onNavigate={handleNavigate}
+        onSignOut={onSignOut}
+      />
+
       <div className="flex-1 flex flex-col min-w-0">
-        {renderPage()}
-      </div>
+  {renderPage()}
+</div>
+
     </div>
   );
 }

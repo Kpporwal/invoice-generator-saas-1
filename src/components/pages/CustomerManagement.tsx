@@ -177,35 +177,35 @@ if (filter === "Overdue") {
   return true;
 });
   return (
-    <div className="p-8 bg-slate-50 min-h-screen">
+  <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
 
-      {/* Header */}
+    {/* Header */}
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
 
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+      {/* Title - mobile hamburger ke liye space */}
+      <div className="pl-14 md:pl-0">
+        <h1 className="text-3xl font-bold text-slate-800">
+          Customer Management
+        </h1>
 
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
-            Customer Management
-          </h1>
-
-          <p className="text-slate-500 mt-2">
-            Manage customer ledger & due payments
-          </p>
-        </div>
-
-      <button
-  onClick={() => {
-  setEditingCustomer(null);
-  setDrawerOpen(true);
-}}
- className="w-full md:w-auto inline-flex justify-center items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl shadow-lg font-semibold transition-all"
->
-  <Plus className="w-5 h-5" />
-  <span>Add Customer</span>
-</button>
-
+        <p className="text-slate-500 mt-1">
+          Manage customer ledger & due payments
+        </p>
       </div>
 
+      {/* Add Customer Button */}
+      <button
+        onClick={() => {
+          setEditingCustomer(null);
+          setDrawerOpen(true);
+        }}
+        className="w-full md:w-auto inline-flex justify-center items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl shadow-lg font-semibold transition-all"
+      >
+        <Plus className="w-5 h-5" />
+        <span>Add Customer</span>
+      </button>
+
+    </div>
       {/* Summary */}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
