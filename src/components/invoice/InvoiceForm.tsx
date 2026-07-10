@@ -625,30 +625,84 @@ await addCustomer({
                 </div>
                 <input type="text" value={item.name} onChange={e => updateItem(item.id, 'name', e.target.value)} className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Item name" />
                 <input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Description" />
-                <div className="grid grid-cols-2 gap-2">
-                  <input type="number" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', Number(e.target.value))} className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Qty" min="1" />
-                  <input type="number" value={item.rate} onChange={e => updateItem(item.id, 'rate', Number(e.target.value))} className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Rate" min="0" step="0.01" />
-                 <input
-  type="number"
-  value={item.discount}
-  onChange={(e) =>
-    updateItem(item.id, "discount", Number(e.target.value))
-  }
-  className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
-  placeholder="Discount ₹"
-  min="0"
-  max={item.quantity * item.rate}
-  step="0.01"
-/>
-                 
-                  <select value={item.gstPercent} onChange={e => updateItem(item.id, 'gstPercent', Number(e.target.value))} className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500">
-                    <option value={0}>0%</option>
-                    <option value={5}>5%</option>
-                    <option value={12}>12%</option>
-                    <option value={18}>18%</option>
-                    <option value={28}>28%</option>
-                  </select>
-                </div>
+                
+<div className="grid grid-cols-2 gap-3">
+  {/* Quantity */}
+  <div>
+    <label className="block mb-1.5 text-xs font-semibold text-slate-600">
+      Quantity
+    </label>
+
+    <input
+      type="number"
+      value={item.quantity}
+      onChange={(e) =>
+        updateItem(item.id, "quantity", Number(e.target.value))
+      }
+      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+      min="1"
+    />
+  </div>
+
+  {/* Rate */}
+  <div>
+    <label className="block mb-1.5 text-xs font-semibold text-slate-600">
+      Rate / Price
+    </label>
+
+    <input
+      type="number"
+      value={item.rate}
+      onChange={(e) =>
+        updateItem(item.id, "rate", Number(e.target.value))
+      }
+      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+      min="0"
+      step="0.01"
+    />
+  </div>
+
+  {/* Discount */}
+  <div>
+    <label className="block mb-1.5 text-xs font-semibold text-slate-600">
+      Discount (₹)
+    </label>
+
+    <input
+      type="number"
+      value={item.discount}
+      onChange={(e) =>
+        updateItem(item.id, "discount", Number(e.target.value))
+      }
+      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+      min="0"
+      max={item.quantity * item.rate}
+      step="0.01"
+    />
+  </div>
+
+  {/* GST */}
+  <div>
+    <label className="block mb-1.5 text-xs font-semibold text-slate-600">
+      GST Rate
+    </label>
+
+    <select
+      value={item.gstPercent}
+      onChange={(e) =>
+        updateItem(item.id, "gstPercent", Number(e.target.value))
+      }
+      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+    >
+      <option value={0}>0%</option>
+      <option value={5}>5%</option>
+      <option value={12}>12%</option>
+      <option value={18}>18%</option>
+      <option value={28}>28%</option>
+    </select>
+  </div>
+</div>
+
                 <p className="text-xs text-right font-medium text-slate-600">Amount: {formatCurrency(calculateItemAmount(item))}</p>
               </div>
             ))}
